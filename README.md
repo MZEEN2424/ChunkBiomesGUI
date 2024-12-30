@@ -9,4 +9,4 @@ Programs are compiled by
 
 Logic differentiating between Bastion Remnants and Fortresses has not been added yet.
 
-Thank you to Fragrant_Result_186 for calculating the salt, region size, and separation of Ancient Cities.
+Thank you to Fragrant_Result_186 for calculating the salt, region size, and separation of Ancient Cities."# ChunkBiomesGUI" 

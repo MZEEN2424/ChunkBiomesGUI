@@ -268,7 +268,7 @@ public:
         }
         ImGui::SameLine();
         if (ImGui::Button("Report an Issue")) {
-            system("start https://github.com/nxs45/ChunkBiomes/issues");
+            system("start https://github.com/MZEEN2424/ChunkBiomesGUI/issues");
         }
     }
 

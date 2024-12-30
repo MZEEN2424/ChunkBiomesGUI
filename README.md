@@ -26,7 +26,7 @@ Currently, these are the supported structures, and the tool can help locate thes
 - **Search Range**: Define a specific range for seed search.
 - **Continuous Search**: Keeps searching continuously for seeds within the set parameters.
 - **Save Seeds**: Save the found seeds for later use.
-- **Clear Seeds**: Option to clear saved seeds.
+- **Clear Seeds**: Option to clear founded seeds.
 - **Copy Seeds**: Easily copy seeds for use.
 - **Ravine Finder**: (Coming Soon)
 - **Biome Finder**: (Coming Soon)

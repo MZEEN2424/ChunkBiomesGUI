@@ -23,3 +23,4 @@ add_library(cubiomes STATIC
 )
 
 target_include_directories(cubiomes PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(cubiomes PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)

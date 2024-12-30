@@ -71,3 +71,5 @@ target_include_directories(chunkbiomesgui PRIVATE
     ${CMAKE_SOURCE_DIR}/imgui
     ${CMAKE_SOURCE_DIR}/imgui/backends
 )
+
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)

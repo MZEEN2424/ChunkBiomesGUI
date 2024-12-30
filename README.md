@@ -61,6 +61,3 @@ Screenshots of BetaV1:
 ![Screenshot_2470](https://github.com/user-attachments/assets/cc789c9a-d313-4b95-b051-827026efc7be)
 ---
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

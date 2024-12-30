@@ -52,6 +52,7 @@ This application is a desktop port of Chunkbase's seed finding functionality. Th
 
 ---
 ## Screenshots
+Screenshots of BetaV1
 ![Screenshot_2467](https://github.com/user-attachments/assets/1fdc0020-48ad-47f1-a64e-05fad62018bd)
 ![Screenshot_2469](https://github.com/user-attachments/assets/6ae463ee-cefc-4de1-a731-c4b2af7a5fb7)
 ![Screenshot_2468](https://github.com/user-attachments/assets/a2dc6c21-de75-4a80-b61f-c2310e18ea4a)

@@ -1,0 +1,457 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:205 (message)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      The system is: Windows - 10.0.19045 - AMD64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      .NET Framework için Microsoft (R) Build Engine sürüm 16.11.2+f32259642
+      Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+      
+      Oluşturma başlatıldı: 30.12.2024 22:54:04.
+      1 düğümünde "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\3.31.2\\CompilerIdC\\CompilerIdC.vcxproj" projesi (varsayılan hedefler).
+      PrepareForBuild:
+        "Debug\\" dizini oluşturuluyor.
+        "Debug\\CompilerIdC.tlog\\" dizini oluşturuluyor.
+      InitializeBuildStatus:
+        "AlwaysCreate" belirtildiği için "Debug\\CompilerIdC.tlog\\unsuccessfulbuild" oluşturuluyor.
+      ClCompile:
+        G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc142.pdb" /external:W0 /Gd /TC /FC /errorReport:queue "CMakeCCompilerId.c"
+        CMakeCCompilerId.c
+      Link:
+        G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdC.lib" /MACHINE:X64 "Debug\\CMakeCCompilerId.obj"
+        CompilerIdC.vcxproj -> C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\3.31.2\\CompilerIdC\\CompilerIdC.exe
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_C_COMPILER=G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\Hostx64\\x64\\cl.exe
+      FinalizeBuildStatus:
+        "Debug\\CompilerIdC.tlog\\unsuccessfulbuild" dosyası siliniyor.
+        "Debug\\CompilerIdC.tlog\\CompilerIdC.lastbuildstate" öğesine erişiliyor.
+      "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\3.31.2\\CompilerIdC\\CompilerIdC.vcxproj" Projesini Oluşturma İşlemi Tamamlandı (varsayılan hedefler).
+      
+      Oluşturma başarılı oldu.
+          0 Uyarı
+          0 Hata
+      
+      Geçen Süre 00:00:01.43
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
+      
+      The C compiler identification is MSVC, found in:
+        C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/3.31.2/CompilerIdC/CompilerIdC.exe
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      .NET Framework için Microsoft (R) Build Engine sürüm 16.11.2+f32259642
+      Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+      
+      Oluşturma başlatıldı: 30.12.2024 22:54:06.
+      1 düğümünde "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\3.31.2\\CompilerIdCXX\\CompilerIdCXX.vcxproj" projesi (varsayılan hedefler).
+      PrepareForBuild:
+        "Debug\\" dizini oluşturuluyor.
+        "Debug\\CompilerIdCXX.tlog\\" dizini oluşturuluyor.
+      InitializeBuildStatus:
+        "AlwaysCreate" belirtildiği için "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" oluşturuluyor.
+      ClCompile:
+        G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc142.pdb" /external:W0 /Gd /TP /FC /errorReport:queue "CMakeCXXCompilerId.cpp"
+        CMakeCXXCompilerId.cpp
+      Link:
+        G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdCXX.lib" /MACHINE:X64 "Debug\\CMakeCXXCompilerId.obj"
+        CompilerIdCXX.vcxproj -> C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\3.31.2\\CompilerIdCXX\\CompilerIdCXX.exe
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_CXX_COMPILER=G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\Hostx64\\x64\\cl.exe
+      FinalizeBuildStatus:
+        "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" dosyası siliniyor.
+        "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.lastbuildstate" öğesine erişiliyor.
+      "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\3.31.2\\CompilerIdCXX\\CompilerIdCXX.vcxproj" Projesini Oluşturma İşlemi Tamamlandı (varsayılan hedefler).
+      
+      Oluşturma başarılı oldu.
+          0 Uyarı
+          0 Hata
+      
+      Geçen Süre 00:00:01.14
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
+      
+      The CXX compiler identification is MSVC, found in:
+        C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/3.31.2/CompilerIdCXX/CompilerIdCXX.exe
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-l88l9y"
+      binary: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-l88l9y"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-l88l9y'
+        
+        Run Build Command(s): G:/vsstudio/MSBuild/Current/Bin/MSBuild.exe cmTC_67481.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
+        .NET Framework için Microsoft (R) Build Engine sürüm 16.11.2+f32259642
+        Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+        
+        Oluşturma başlatıldı: 30.12.2024 22:54:08.
+        1 düğümünde "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-l88l9y\\cmTC_67481.vcxproj" projesi (varsayılan hedefler).
+        PrepareForBuild:
+          "cmTC_67481.dir\\Debug\\" dizini oluşturuluyor.
+          "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-l88l9y\\Debug\\" dizini oluşturuluyor.
+          "cmTC_67481.dir\\Debug\\cmTC_67481.tlog\\" dizini oluşturuluyor.
+        InitializeBuildStatus:
+          "AlwaysCreate" belirtildiği için "cmTC_67481.dir\\Debug\\cmTC_67481.tlog\\unsuccessfulbuild" oluşturuluyor.
+        ClCompile:
+          G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D "WIN32" /D "_WINDOWS" /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_67481.dir\\Debug\\\\" /Fd"cmTC_67481.dir\\Debug\\vc142.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
+          x64 için Microsoft (R) C/C++ İyileştirmeli Derleyicisi Sürüm 19.29.30154
+          Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+          CMakeCCompilerABI.c
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D "WIN32" /D "_WINDOWS" /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_67481.dir\\Debug\\\\" /Fd"cmTC_67481.dir\\Debug\\vc142.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
+        Link:
+          G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-l88l9y\\Debug\\cmTC_67481.exe" /INCREMENTAL /ILK:"cmTC_67481.dir\\Debug\\cmTC_67481.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-l88l9y/Debug/cmTC_67481.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-l88l9y/Debug/cmTC_67481.lib" /MACHINE:X64  /machine:x64 "cmTC_67481.dir\\Debug\\CMakeCCompilerABI.obj"
+          cmTC_67481.vcxproj -> C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-l88l9y\\Debug\\cmTC_67481.exe
+        FinalizeBuildStatus:
+          "cmTC_67481.dir\\Debug\\cmTC_67481.tlog\\unsuccessfulbuild" dosyası siliniyor.
+          "cmTC_67481.dir\\Debug\\cmTC_67481.tlog\\cmTC_67481.lastbuildstate" öğesine erişiliyor.
+        "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-l88l9y\\cmTC_67481.vcxproj" Projesini Oluşturma İşlemi Tamamlandı (varsayılan hedefler).
+        
+        Oluşturma başarılı oldu.
+            0 Uyarı
+            0 Hata
+        
+        Geçen Süre 00:00:01.60
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
+        linker tool for 'C': G:/vsstudio/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/link.exe
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Running the C compiler's linker: "G:/vsstudio/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/link.exe" "-v"
+      Microsoft (R) Incremental Linker Version 14.29.30154.0
+      Copyright (C) Microsoft Corporation.  All rights reserved.
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-dqyzer"
+      binary: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-dqyzer"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-dqyzer'
+        
+        Run Build Command(s): G:/vsstudio/MSBuild/Current/Bin/MSBuild.exe cmTC_49b7e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
+        .NET Framework için Microsoft (R) Build Engine sürüm 16.11.2+f32259642
+        Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+        
+        Oluşturma başlatıldı: 30.12.2024 22:54:11.
+        1 düğümünde "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dqyzer\\cmTC_49b7e.vcxproj" projesi (varsayılan hedefler).
+        PrepareForBuild:
+          "cmTC_49b7e.dir\\Debug\\" dizini oluşturuluyor.
+          "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dqyzer\\Debug\\" dizini oluşturuluyor.
+          "cmTC_49b7e.dir\\Debug\\cmTC_49b7e.tlog\\" dizini oluşturuluyor.
+        InitializeBuildStatus:
+          "AlwaysCreate" belirtildiği için "cmTC_49b7e.dir\\Debug\\cmTC_49b7e.tlog\\unsuccessfulbuild" oluşturuluyor.
+        ClCompile:
+          G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D "WIN32" /D "_WINDOWS" /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_49b7e.dir\\Debug\\\\" /Fd"cmTC_49b7e.dir\\Debug\\vc142.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+          x64 için Microsoft (R) C/C++ İyileştirmeli Derleyicisi Sürüm 19.29.30154
+          Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+          CMakeCXXCompilerABI.cpp
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D "WIN32" /D "_WINDOWS" /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_49b7e.dir\\Debug\\\\" /Fd"cmTC_49b7e.dir\\Debug\\vc142.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+        Link:
+          G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dqyzer\\Debug\\cmTC_49b7e.exe" /INCREMENTAL /ILK:"cmTC_49b7e.dir\\Debug\\cmTC_49b7e.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-dqyzer/Debug/cmTC_49b7e.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-dqyzer/Debug/cmTC_49b7e.lib" /MACHINE:X64  /machine:x64 "cmTC_49b7e.dir\\Debug\\CMakeCXXCompilerABI.obj"
+          cmTC_49b7e.vcxproj -> C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dqyzer\\Debug\\cmTC_49b7e.exe
+        FinalizeBuildStatus:
+          "cmTC_49b7e.dir\\Debug\\cmTC_49b7e.tlog\\unsuccessfulbuild" dosyası siliniyor.
+          "cmTC_49b7e.dir\\Debug\\cmTC_49b7e.tlog\\cmTC_49b7e.lastbuildstate" öğesine erişiliyor.
+        "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dqyzer\\cmTC_49b7e.vcxproj" Projesini Oluşturma İşlemi Tamamlandı (varsayılan hedefler).
+        
+        Oluşturma başarılı oldu.
+            0 Uyarı
+            0 Hata
+        
+        Geçen Süre 00:00:01.51
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
+        linker tool for 'CXX': G:/vsstudio/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/link.exe
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Running the CXX compiler's linker: "G:/vsstudio/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/link.exe" "-v"
+      Microsoft (R) Incremental Linker Version 14.29.30154.0
+      Copyright (C) Microsoft Corporation.  All rights reserved.
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckCSourceCompiles.cmake:58 (cmake_check_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:97 (CHECK_C_SOURCE_COMPILES)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:163 (_threads_check_libc)"
+      - "glfw/CMakeLists.txt:52 (find_package)"
+    checks:
+      - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
+    directories:
+      source: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-on82vz"
+      binary: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-on82vz"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/glfw/CMake/modules"
+    buildResult:
+      variable: "CMAKE_HAVE_LIBC_PTHREAD"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-on82vz'
+        
+        Run Build Command(s): G:/vsstudio/MSBuild/Current/Bin/MSBuild.exe cmTC_4f142.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
+        .NET Framework için Microsoft (R) Build Engine sürüm 16.11.2+f32259642
+        Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+        
+        Oluşturma başlatıldı: 30.12.2024 22:54:13.
+        1 düğümünde "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-on82vz\\cmTC_4f142.vcxproj" projesi (varsayılan hedefler).
+        PrepareForBuild:
+          "cmTC_4f142.dir\\Debug\\" dizini oluşturuluyor.
+          "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-on82vz\\Debug\\" dizini oluşturuluyor.
+          "cmTC_4f142.dir\\Debug\\cmTC_4f142.tlog\\" dizini oluşturuluyor.
+        InitializeBuildStatus:
+          "AlwaysCreate" belirtildiği için "cmTC_4f142.dir\\Debug\\cmTC_4f142.tlog\\unsuccessfulbuild" oluşturuluyor.
+        ClCompile:
+          G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D "WIN32" /D "_WINDOWS" /D "CMAKE_HAVE_LIBC_PTHREAD" /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /std:c11 /Fo"cmTC_4f142.dir\\Debug\\\\" /Fd"cmTC_4f142.dir\\Debug\\vc142.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-on82vz\\src.c"
+          x64 için Microsoft (R) C/C++ İyileştirmeli Derleyicisi Sürüm 19.29.30154
+          Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+          src.c
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D "WIN32" /D "_WINDOWS" /D "CMAKE_HAVE_LIBC_PTHREAD" /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /std:c11 /Fo"cmTC_4f142.dir\\Debug\\\\" /Fd"cmTC_4f142.dir\\Debug\\vc142.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-on82vz\\src.c"
+        C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-on82vz\\src.c(1,1): fatal error C1083: içerme dosyası açılamıyor: 'pthread.h': No such file or directory [C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-on82vz\\cmTC_4f142.vcxproj]
+        "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-on82vz\\cmTC_4f142.vcxproj" Projesini Oluşturma İşlemi Tamamlandı (varsayılan hedefler) -- BAŞARISIZ OLDU.
+        
+        Oluşturma BAŞARISIZ OLDU.
+        
+        "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-on82vz\\cmTC_4f142.vcxproj" (varsayılan hedef) (1) ->
+        (ClCompile hedefi) -> 
+          C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-on82vz\\src.c(1,1): fatal error C1083: içerme dosyası açılamıyor: 'pthread.h': No such file or directory [C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-on82vz\\cmTC_4f142.vcxproj]
+        
+            0 Uyarı
+            1 Hata
+        
+        Geçen Süre 00:00:00.82
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:112 (CHECK_LIBRARY_EXISTS)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:175 (_threads_check_lib)"
+      - "glfw/CMakeLists.txt:52 (find_package)"
+    checks:
+      - "Looking for pthread_create in pthreads"
+    directories:
+      source: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-fdmbnc"
+      binary: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-fdmbnc"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/glfw/CMake/modules"
+    buildResult:
+      variable: "CMAKE_HAVE_PTHREADS_CREATE"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-fdmbnc'
+        
+        Run Build Command(s): G:/vsstudio/MSBuild/Current/Bin/MSBuild.exe cmTC_c74f1.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
+        .NET Framework için Microsoft (R) Build Engine sürüm 16.11.2+f32259642
+        Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+        
+        Oluşturma başlatıldı: 30.12.2024 22:54:14.
+        1 düğümünde "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fdmbnc\\cmTC_c74f1.vcxproj" projesi (varsayılan hedefler).
+        PrepareForBuild:
+          "cmTC_c74f1.dir\\Debug\\" dizini oluşturuluyor.
+          "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fdmbnc\\Debug\\" dizini oluşturuluyor.
+          "cmTC_c74f1.dir\\Debug\\cmTC_c74f1.tlog\\" dizini oluşturuluyor.
+        InitializeBuildStatus:
+          "AlwaysCreate" belirtildiği için "cmTC_c74f1.dir\\Debug\\cmTC_c74f1.tlog\\unsuccessfulbuild" oluşturuluyor.
+        ClCompile:
+          G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D "WIN32" /D "_WINDOWS" /D "CHECK_FUNCTION_EXISTS=pthread_create" /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /std:c11 /Fo"cmTC_c74f1.dir\\Debug\\\\" /Fd"cmTC_c74f1.dir\\Debug\\vc142.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fdmbnc\\CheckFunctionExists.c"
+          x64 için Microsoft (R) C/C++ İyileştirmeli Derleyicisi Sürüm 19.29.30154
+          Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+          CheckFunctionExists.c
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D "WIN32" /D "_WINDOWS" /D "CHECK_FUNCTION_EXISTS=pthread_create" /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /std:c11 /Fo"cmTC_c74f1.dir\\Debug\\\\" /Fd"cmTC_c74f1.dir\\Debug\\vc142.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fdmbnc\\CheckFunctionExists.c"
+        Link:
+          G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fdmbnc\\Debug\\cmTC_c74f1.exe" /INCREMENTAL /ILK:"cmTC_c74f1.dir\\Debug\\cmTC_c74f1.ilk" /NOLOGO pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-fdmbnc/Debug/cmTC_c74f1.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-fdmbnc/Debug/cmTC_c74f1.lib" /MACHINE:X64  /machine:x64 cmTC_c74f1.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: 'pthreads.lib' dosyası açılamıyor [C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fdmbnc\\cmTC_c74f1.vcxproj]
+        "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fdmbnc\\cmTC_c74f1.vcxproj" Projesini Oluşturma İşlemi Tamamlandı (varsayılan hedefler) -- BAŞARISIZ OLDU.
+        
+        Oluşturma BAŞARISIZ OLDU.
+        
+        "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fdmbnc\\cmTC_c74f1.vcxproj" (varsayılan hedef) (1) ->
+        (Link hedefi) -> 
+          LINK : fatal error LNK1104: 'pthreads.lib' dosyası açılamıyor [C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fdmbnc\\cmTC_c74f1.vcxproj]
+        
+            0 Uyarı
+            1 Hata
+        
+        Geçen Süre 00:00:01.23
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:112 (CHECK_LIBRARY_EXISTS)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:176 (_threads_check_lib)"
+      - "glfw/CMakeLists.txt:52 (find_package)"
+    checks:
+      - "Looking for pthread_create in pthread"
+    directories:
+      source: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-5nc3f8"
+      binary: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-5nc3f8"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/glfw/CMake/modules"
+    buildResult:
+      variable: "CMAKE_HAVE_PTHREAD_CREATE"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-5nc3f8'
+        
+        Run Build Command(s): G:/vsstudio/MSBuild/Current/Bin/MSBuild.exe cmTC_399b8.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
+        .NET Framework için Microsoft (R) Build Engine sürüm 16.11.2+f32259642
+        Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+        
+        Oluşturma başlatıldı: 30.12.2024 22:54:16.
+        1 düğümünde "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5nc3f8\\cmTC_399b8.vcxproj" projesi (varsayılan hedefler).
+        PrepareForBuild:
+          "cmTC_399b8.dir\\Debug\\" dizini oluşturuluyor.
+          "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5nc3f8\\Debug\\" dizini oluşturuluyor.
+          "cmTC_399b8.dir\\Debug\\cmTC_399b8.tlog\\" dizini oluşturuluyor.
+        InitializeBuildStatus:
+          "AlwaysCreate" belirtildiği için "cmTC_399b8.dir\\Debug\\cmTC_399b8.tlog\\unsuccessfulbuild" oluşturuluyor.
+        ClCompile:
+          G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D "WIN32" /D "_WINDOWS" /D "CHECK_FUNCTION_EXISTS=pthread_create" /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /std:c11 /Fo"cmTC_399b8.dir\\Debug\\\\" /Fd"cmTC_399b8.dir\\Debug\\vc142.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5nc3f8\\CheckFunctionExists.c"
+          x64 için Microsoft (R) C/C++ İyileştirmeli Derleyicisi Sürüm 19.29.30154
+          Telif Hakkı (C) Microsoft Corporation. Tüm hakları saklıdır.
+          CheckFunctionExists.c
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D "WIN32" /D "_WINDOWS" /D "CHECK_FUNCTION_EXISTS=pthread_create" /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /std:c11 /Fo"cmTC_399b8.dir\\Debug\\\\" /Fd"cmTC_399b8.dir\\Debug\\vc142.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5nc3f8\\CheckFunctionExists.c"
+        Link:
+          G:\\vsstudio\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5nc3f8\\Debug\\cmTC_399b8.exe" /INCREMENTAL /ILK:"cmTC_399b8.dir\\Debug\\cmTC_399b8.ilk" /NOLOGO pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-5nc3f8/Debug/cmTC_399b8.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/kalok/Downloads/Chunkbiomes-main/Chunkbiomes-main/build/CMakeFiles/CMakeScratch/TryCompile-5nc3f8/Debug/cmTC_399b8.lib" /MACHINE:X64  /machine:x64 cmTC_399b8.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: 'pthread.lib' dosyası açılamıyor [C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5nc3f8\\cmTC_399b8.vcxproj]
+        "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5nc3f8\\cmTC_399b8.vcxproj" Projesini Oluşturma İşlemi Tamamlandı (varsayılan hedefler) -- BAŞARISIZ OLDU.
+        
+        Oluşturma BAŞARISIZ OLDU.
+        
+        "C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5nc3f8\\cmTC_399b8.vcxproj" (varsayılan hedef) (1) ->
+        (Link hedefi) -> 
+          LINK : fatal error LNK1104: 'pthread.lib' dosyası açılamıyor [C:\\Users\\kalok\\Downloads\\Chunkbiomes-main\\Chunkbiomes-main\\build\\CMakeFiles\\CMakeScratch\\TryCompile-5nc3f8\\cmTC_399b8.vcxproj]
+        
+            0 Uyarı
+            1 Hata
+        
+        Geçen Süre 00:00:01.12
+        
+      exitCode: 1
+...

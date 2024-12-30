@@ -1,0 +1,2 @@
+C:\msys64\ucrt64\bin\ar.exe qc libbfinders.a CMakeFiles/bfinders.dir/Bfinders.c.obj
+C:\msys64\ucrt64\bin\ranlib.exe libbfinders.a

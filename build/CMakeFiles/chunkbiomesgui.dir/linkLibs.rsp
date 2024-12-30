@@ -1,0 +1,1 @@
+ libimgui.a glfw/src/libglfw3.a cubiomes/libcubiomes.a libbfinders.a -lopengl32 -lglu32 cubiomes/libcubiomes.a -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 

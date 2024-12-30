@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\kalok\Downloads\Chunkbiomes-main\Chunkbiomes-main\build\CMakeFiles\1435a8b45b5bb9a8d94e90a110536302\uninstall.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\kalok\Downloads\Chunkbiomes-main\Chunkbiomes-main\glfw\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\kalok\Downloads\Chunkbiomes-main\Chunkbiomes-main\build\glfw\CMakeFiles\uninstall" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{A7996FD4-6B67-3487-8D61-39B6F92814B4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\kalok\Downloads\Chunkbiomes-main\Chunkbiomes-main\ChunkBiomesGUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\kalok\Downloads\Chunkbiomes-main\Chunkbiomes-main\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{BB8FBAAB-3666-34D2-9794-5D2B8AD8260D}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

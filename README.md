@@ -34,12 +34,13 @@ This application is a desktop port of Chunkbase's seed finding functionality. Th
 ---
 
 ## Build Instructions
-This tool relies on Dear ImGUI, GLFW, and [the Cubiomes library](https://github.com/Cubitect/Cubiomes). It requires CMake to build.
+This tool relies on Dear ImGUI, GLFW, and [the Cubiomes library](https://github.com/Cubitect/Cubiomes). It requires CMake and MinGW to build.
 
 1. Clone or download the repository to your local machine.
-2. Navigate to the project folder, and open the `build` directory.
-3. Inside the `build` folder, you’ll find a file named `BuildExe.bat`. Simply run this batch file to start the build process.
-4. Once the process is complete, the executable (`.exe`) file will be ready for use.
+2. Navigate to the project's main directory.
+3. In the main directory, you’ll find a file named `build.bat`. Simply run this batch file to start the build process.
+4. Once the process is complete, the executable (`.exe`) file will be located in the `build/bin` directory.
+
 
 ---
 ## Screenshots

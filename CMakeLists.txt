@@ -10,8 +10,8 @@ find_package(OpenGL REQUIRED)
 # Add GLFW subdirectory
 add_subdirectory(glfw)
 
-# Add cubiomes subdirectory
-add_subdirectory(cubiomes)
+# Add Chunkbiomes subdirectory
+add_library(Chunkbiomes STATIC)
 
 # Create ImGui library
 add_library(imgui STATIC
@@ -37,8 +37,8 @@ target_link_libraries(imgui PUBLIC
 
 # Create Bfinders library
 add_library(bfinders STATIC
-    Bfinders.c
-    Bfinders.h
+    Chunkbiomes/Bfinders.c
+    Chunkbiomes/Bfinders.h
 )
 
 target_include_directories(bfinders PUBLIC
@@ -49,8 +49,6 @@ target_link_libraries(bfinders PUBLIC
     cubiomes
 )
 
-# Original chunkbiomes executable
-add_executable(chunkbiomes test.c)
 target_link_libraries(chunkbiomes PRIVATE 
     cubiomes
     bfinders

@@ -26,7 +26,7 @@ Currently, these are the supported structures, and the tool can help locate thes
 - **Search Range**: Define a specific range for seed search.
 - **Continuous Search**: Keeps searching continuously for seeds within the set parameters.
 - **Save Seeds**: Save the found seeds for later use.
-- **Clear Seeds**: Option to clear saved seeds.
+- **Clear Seeds**: Option to clear founded seeds.
 - **Copy Seeds**: Easily copy seeds for use.
 - **Ravine Finder**: (Coming Soon)
 - **Biome Finder**: (Coming Soon)
@@ -51,7 +51,13 @@ This application is a desktop port of Chunkbase's seed finding functionality. Th
 4. **Ready Executable**: Once the process is complete, the executable (`.exe`) file will be ready for use.
 
 ---
+## Screenshots
+Screenshots of BetaV1:
 
-## License
+![Screenshot_2467](https://github.com/user-attachments/assets/1fdc0020-48ad-47f1-a64e-05fad62018bd)
+![Screenshot_2469](https://github.com/user-attachments/assets/6ae463ee-cefc-4de1-a731-c4b2af7a5fb7)
+![Screenshot_2468](https://github.com/user-attachments/assets/a2dc6c21-de75-4a80-b61f-c2310e18ea4a)
+![Screenshot_2466](https://github.com/user-attachments/assets/ebcd8206-04fe-4c8e-9310-70b6a8f56574)
+![Screenshot_2470](https://github.com/user-attachments/assets/cc789c9a-d313-4b95-b051-827026efc7be)
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

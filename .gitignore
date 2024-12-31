@@ -1,0 +1,21 @@
+# Build directories
+build/
+/build
+*.o
+*.exe
+*.a
+
+# CMake files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.cmake
+
+# IDE files
+.vscode/
+.vs/
+*.suo
+*.user
+
+# Other generated files
+imgui.ini

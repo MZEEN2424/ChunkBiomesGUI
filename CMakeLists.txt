@@ -82,8 +82,8 @@ target_compile_definitions(chunkbiomesgui PRIVATE
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
-# Copy required files to output directory
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/imgui.ini" DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+# Remove the imgui.ini copy section since it's handled by the application
+# The application will create the file if it doesn't exist
 
 # Install targets
 install(TARGETS chunkbiomes chunkbiomesgui

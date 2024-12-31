@@ -8,30 +8,25 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
-#include <set>
+#include <unordered_set>
 #include <random>
 #include <chrono>
-#include <format>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
-#include <cstring>
-#include <cmath>
+// #include <cstring>
+// #include <cmath>
 #include <limits>
 #include <Windows.h>
 
-extern "C" {
-#include "cubiomes/generator.h"
-#include "cubiomes/finders.h"
-#include "Bfinders.h"
-}
+#include "Chunkbiomes/Bfinders.h"
 
 class StructureFinder {
 private:
     // Random generation for different ranges
     std::random_device rd;
     std::mt19937_64 gen;  // Using 64-bit Mersenne Twister for full range support
-    const int numThreads = std::max(1, (int)std::thread::hardware_concurrency());
+    const unsigned int numThreads = std::max(1U, std::thread::hardware_concurrency());
 
     // Make sure Generator is thread-safe
     Generator g;
@@ -74,9 +69,9 @@ public:
 
     const char* struct2str(int structureType) {
         switch (structureType) {
-            case Village:           return "Village";
-            case Desert_Pyramid:    return "Desert Pyramid";
-            case Jungle_Pyramid:    return "Jungle Pyramid";
+            case Village:          return "Village";
+            case Desert_Pyramid:   return "Desert Pyramid";
+            case Jungle_Pyramid:   return "Jungle Pyramid";
             case Swamp_Hut:        return "Swamp Hut";
             case Igloo:            return "Igloo";
             case Monument:         return "Monument";
@@ -111,11 +106,11 @@ public:
             searchThreads.clear();  // Clear any old threads
             
             // Create new threads
-            for (int i = 0; i < numThreads; i++) {
+            for (unsigned int i = 0; i < numThreads; i++) {
                 searchThreads.emplace_back([this, i]() {
                     try {
                         // Thread-local random generator
-                        std::mt19937_64 localGen(rd() + i);
+                        std::mt19937_64 localGen(rd() + static_cast<int>(i));
                         
                         // Choose distribution based on selected range
                         std::uniform_int_distribution<int64_t> localDist;
@@ -140,20 +135,19 @@ public:
                             }
 
                             Pos pos;
-                            if (findStructure(seedToCheck, &pos, searchRadius)) {
-                                std::lock_guard<std::mutex> lock(structuresMutex);
-                                structureNames.push_back(struct2str(selectedStructure));
-                                positions.push_back(pos);
-                                foundSeeds.push_back(seedToCheck);
-                                currentStatus = "[FOUND] Seed: " + std::to_string(seedToCheck) +
-                                              " | Coords: [" + std::to_string(pos.x) + ", " + std::to_string(pos.z) + "]" +
-                                              " | Distance: " + std::to_string((int)sqrt(pow(pos.x, 2) + pow(pos.z, 2))) + "m";
-                                
-                                // Check if continuous search is disabled
-                                if (!continuousSearch) {
-                                    shouldStop = true;
-                                    break;
-                                }
+                            if (!findStructure(seedToCheck, searchRadius, pos)) continue;
+                            std::lock_guard<std::mutex> lock(structuresMutex);
+                            structureNames.push_back(struct2str(selectedStructure));
+                            positions.push_back(pos);
+                            foundSeeds.push_back(seedToCheck);
+                            currentStatus = "[FOUND] Seed: " + std::to_string(seedToCheck) +
+                                            " | Coords: [" + std::to_string(pos.x) + ", " + std::to_string(pos.z) + "]" +
+                                            " | Distance: " + std::to_string(static_cast<int>(sqrt(static_cast<int64_t>(pos.x)*static_cast<int64_t>(pos.x) + static_cast<int64_t>(pos.z)*static_cast<int64_t>(pos.z)))) + " blocks";
+                            
+                            // Check if continuous search is disabled
+                            if (!continuousSearch) {
+                                shouldStop = true;
+                                break;
                             }
                         }
                     } catch (const std::exception& e) {
@@ -177,12 +171,11 @@ public:
         
         // Properly join all threads
         for (auto& thread : searchThreads) {
-            if (thread.joinable()) {
-                try {
-                    thread.join();
-                } catch (const std::exception& e) {
-                    // Handle any thread joining errors
-                }
+            if (!thread.joinable()) continue;
+            try {
+                thread.join();
+            } catch (const std::exception& e) {
+                // Handle any thread joining errors
             }
         }
         searchThreads.clear();
@@ -194,7 +187,7 @@ public:
         ImGui::Separator();
 
         // Important Notice about Chunkbase
-        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "IMPORTANT NOTICE:");
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "NOTICE:");
         ImGui::TextWrapped(
             "This application is a desktop port of Chunkbase's seed finding functionality. "
             "The core functionality and algorithms are based on Chunkbase (https://www.chunkbase.com/), "
@@ -576,29 +569,9 @@ public:
         ImGui::End();
     }
 
-    bool isDeepOcean(int biomeId) {
-        return biomeId == deep_ocean || 
-               biomeId == deep_frozen_ocean || 
-               biomeId == deep_cold_ocean || 
-               biomeId == deep_lukewarm_ocean;
-    }
-
-    bool isShipwreckBiome(int biomeId) {
-        return biomeId == beach ||
-               biomeId == snowy_beach ||
-               biomeId == ocean;
-    }
-
-    bool isVillageBiome(int biomeId) {
-        return biomeId == desert ||
-               biomeId == plains ||
-               biomeId == meadow ||
-               biomeId == savanna ||
-               biomeId == snowy_plains ||
-               biomeId == taiga ||
-               biomeId == snowy_taiga ||
-               biomeId == sunflower_plains;
-    }
+    const std::unordered_set<int> DEEP_OCEAN_BIOMES = {deep_ocean, deep_frozen_ocean, deep_cold_ocean, deep_lukewarm_ocean};
+    const std::unordered_set<int> SHIPWRECK_BIOMES  = {beach, snowy_beach, ocean};
+    const std::unordered_set<int> VILLAGE_BIOMES    = {desert, plains, meadow, savanna, snowy_plains, taiga, snowy_taiga, sunflower_plains};
 
     void resetSearchMetrics() {
         seedsChecked = 0;
@@ -620,40 +593,35 @@ public:
     }
 
     bool isWithinRadius(const Pos& pos, int radius) {
-        return (int)sqrt(pow(pos.x, 2) + pow(pos.z, 2)) <= radius;
+        return static_cast<int64_t>(pos.x)*static_cast<int64_t>(pos.x) + static_cast<int64_t>(pos.z)*static_cast<int64_t>(pos.z) <= static_cast<int64_t>(radius)*static_cast<int64_t>(radius);
     }
 
     bool checkSurroundingBiomes(int centerX, int centerZ, int biomeId, int radius) {
         int count = 0;
-        int totalChecks = 0;
+        int totalChecks = (((centerX + radius) >> 2) - ((centerX - radius) >> 2) + 1)*(((centerZ + radius) >> 2) - ((centerZ - radius) >> 2) + 1);
         
-        for(int r = 0; r <= radius; r++) {
-            for(int x = centerX - r; x <= centerX + r; x++) {
-                for(int z = centerZ - r; z <= centerZ + r; z++) {
-                    if(abs(x - centerX) == r || abs(z - centerZ) == r) {
-                        totalChecks++;
-                        int currentBiome = getBiomeAt(&g, 4, x >> 2, 319>>2, z >> 2);
-                        if(currentBiome == biomeId) {
-                            count++;
-                        } else {
-                            if(r < radius/2) {
-                                return false;
-                            }
-                        }
+        for(int r = 0; r <= radius; ++r) {
+            for(int x = centerX - r; x <= centerX + r; x += 4) {
+                if (abs(x - centerX) != r) continue;
+                for(int z = centerZ - r; z <= centerZ + r; z += 4) {
+                    if (abs(z - centerZ) != r) continue;
+                    int currentBiome = getBiomeAt(&g, 4, x >> 2, 319>>2, z >> 2);
+                    if(currentBiome == biomeId) {
+                        count++;
+                    } else if(r < radius/2) {
+                        return false;
                     }
                 }
             }
-            if(r == radius/2) {
-                if(count < totalChecks * 0.9) {
-                    return false;
-                }
+            if(r == radius/2 && count < totalChecks * 0.9) {
+                return false;
             }
         }
         
         return count >= totalChecks * 0.8;
     }
 
-    bool findStructure(int64_t seed, Pos* pos, int radius) {
+    bool findStructure(int64_t seed, int radius, Pos &pos) {
         std::lock_guard<std::mutex> lock(generatorMutex);
         
         setupGenerator(&g, MC_NEWEST, 0);
@@ -661,53 +629,55 @@ public:
         g.dim = DIM_OVERWORLD;
         applySeed(&g, DIM_OVERWORLD, seed);
 
-        int regionRadius = (radius / 512) + 1;
+        StructureConfig sconf;
+        if (!getBedrockStructureConfig(selectedStructure, g.mc, &sconf)) {
+            return false;
+        }
+        int regionRadius = static_cast<int>(std::ceil(static_cast<double>(radius)/(16.*static_cast<double>(sconf.regionSize))));
 
         for (int regionX = -regionRadius; regionX <= regionRadius; ++regionX) {
             for (int regionZ = -regionRadius; regionZ <= regionRadius; ++regionZ) {
-                StructureConfig sconf;
-                if (!getBedrockStructureConfig(selectedStructure, g.mc, &sconf)) {
+
+                if (!getBedrockStructurePos(selectedStructure, g.mc, seed, regionX, regionZ, &pos)) {
                     continue;
                 }
 
-                Pos p;
-                if (!getBedrockStructurePos(selectedStructure, g.mc, seed, regionX, regionZ, &p)) {
+                if (!isWithinRadius(pos, radius)) {
                     continue;
                 }
 
-                if (!isWithinRadius(p, radius)) {
+                if (!isViableStructurePos(selectedStructure, &g, pos.x, pos.z, 0)) {
                     continue;
                 }
 
-                if (!isViableStructurePos(selectedStructure, &g, p.x, p.z, 0)) {
-                    continue;
-                }
-
-                if (!isViableStructureTerrain(selectedStructure, &g, p.x, p.z)) {
+                if (!isViableStructureTerrain(selectedStructure, &g, pos.x, pos.z)) {
                     continue;
                 }
 
                 // Additional biome checks for Monument and Mansion
-                int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
+                int biomeId;
+                switch (selectedStructure) {
+                    case Monument:
+                        biomeId = getBiomeAt(&g, 4, pos.x >> 2, 319>>2, pos.z >> 2);
+                        if (DEEP_OCEAN_BIOMES.find(biomeId) == DEEP_OCEAN_BIOMES.end()) continue;
+                        if (!checkSurroundingBiomes(pos.x, pos.z, biomeId, 32)) continue;
+                        break;
+                    case Mansion:
+                        biomeId = getBiomeAt(&g, 4, pos.x >> 2, 319>>2, pos.z >> 2);
+                        if (biomeId != dark_forest) continue;
+                        if (!checkSurroundingBiomes(pos.x, pos.z, dark_forest, 64)) continue;
+                        break;
+                    case Shipwreck:
+                        biomeId = getBiomeAt(&g, 4, pos.x >> 2, 319>>2, pos.z >> 2);
+                        if (SHIPWRECK_BIOMES.find(biomeId) == SHIPWRECK_BIOMES.end()) continue;
+                        if (!checkSurroundingBiomes(pos.x, pos.z, biomeId, 32)) continue;
+                        break;
+                    case Village:
+                        biomeId = getBiomeAt(&g, 4, pos.x >> 2, 319>>2, pos.z >> 2);
+                        if (VILLAGE_BIOMES.find(biomeId) == VILLAGE_BIOMES.end()) continue;
+                        if (!checkSurroundingBiomes(pos.x, pos.z, biomeId, 16)) continue;
+                }
                 
-                if (selectedStructure == Monument) {
-                    if (!isDeepOcean(biomeId)) continue;
-                    if (!checkSurroundingBiomes(p.x, p.z, biomeId, 32)) continue;
-                }
-                else if (selectedStructure == Mansion) {
-                    if (biomeId != dark_forest) continue;
-                    if (!checkSurroundingBiomes(p.x, p.z, dark_forest, 64)) continue;
-                }
-                else if (selectedStructure == Shipwreck) {
-                    if (!isShipwreckBiome(biomeId)) continue;
-                    if (!checkSurroundingBiomes(p.x, p.z, biomeId, 32)) continue;
-                }
-                else if (selectedStructure == Village) {
-                    if (!isVillageBiome(biomeId)) continue;
-                    if (!checkSurroundingBiomes(p.x, p.z, biomeId, 16)) continue;
-                }
-
-                *pos = p;
                 return true;
             }
         }
@@ -719,7 +689,7 @@ static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-int main(int argc, char** argv) {
+int main() {
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())

@@ -1,25 +1,16 @@
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <stdio.h>
-#include <GLFW/glfw3.h>
-#include <vector>
-#include <string>
-#include <thread>
 #include <atomic>
-#include <mutex>
-#include <unordered_set>
-#include <random>
-#include <chrono>
-#include <iostream>
 #include <fstream>
-#include <filesystem>
-// #include <cstring>
-// #include <cmath>
-#include <limits>
+#include <mutex>
+#include <random>
+#include <thread>
+#include <unordered_set>
 #include <Windows.h>
 
 #include "Chunkbiomes/Bfinders.h"
+#include <GLFW/glfw3.h>
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 class StructureFinder {
 private:

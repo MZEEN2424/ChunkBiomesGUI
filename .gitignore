@@ -341,3 +341,13 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/c,c++,cuda,java,python,windows,visualstudiocode,cmake
+
+*.cmake
+
+# IDE files
+.vs/
+*.suo
+*.user
+
+# Other generated files
+imgui.ini

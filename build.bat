@@ -1,8 +1,8 @@
 @echo off
-title ChunkBiomes Build Script
+title ChunkBiomesGUI Build Script
 
 echo ==================================
-echo    ChunkBiomes Build Script
+echo    ChunkBiomesGUI Build Script
 echo ==================================
 echo.
 
@@ -14,6 +14,7 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
+:: TODO: GENERALIZE
 where mingw32-make >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo Error: MinGW32-Make not found! Please install MinGW and add it to your PATH.
@@ -36,7 +37,8 @@ mkdir build
 cd build
 
 echo Configuring with CMake...
-cmake -G "MinGW Makefiles" ..
+:: TODO: GENERALIZE
+cmake.exe -G "MinGW Makefiles" ..
 if %ERRORLEVEL% NEQ 0 (
     echo Error: CMake configuration failed!
     cd ..
@@ -45,6 +47,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo Building project...
+:: TODO: GENERALIZE
 mingw32-make.exe
 if %ERRORLEVEL% NEQ 0 (
     echo Error: Build failed!
@@ -64,15 +67,14 @@ if exist bin\chunkbiomesgui.exe (
     echo [ERROR] GUI executable not created!
 )
 
-if exist bin\chunkbiomes.exe (
-    echo [SUCCESS] Console executable created successfully!
-    echo   Location: build\bin\chunkbiomes.exe
-) else (
-    echo [ERROR] Console executable not created!
-)
+:: if exist bin\chunkbiomes.exe (
+::     echo [SUCCESS] Console executable created successfully!
+::     echo   Location: build\bin\chunkbiomes.exe
+:: ) else (
+::     echo [ERROR] Console executable not created!
+:: )
 
 cd ..
 echo.
 echo Press any key to exit...
 pause >nul
-

@@ -1,8 +1,8 @@
 @echo off
-title ChunkBiomesGUI Build Script
+title ChunkBiomes GUI Build Script
 
 echo ==================================
-echo    ChunkBiomesGUI Build Script
+echo    ChunkBiomes GUI Build Script
 echo ==================================
 echo.
 
@@ -23,6 +23,14 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo Cleaning build directory...
+:: if qprocess "chunkbiomesgui.exe" >nul (
+::      taskkill /f /im chunkbiomesgui.exe
+::      if %ERRORLEVEL% NEQ 0 (
+::          echo Error: Failed to kill running executable!
+::          pause
+::          exit /b 1
+::      )
+::  )
 if exist build (
     rmdir /s /q build
     if %ERRORLEVEL% NEQ 0 (
@@ -61,20 +69,15 @@ echo Build completed successfully!
 echo.
 
 if exist bin\chunkbiomesgui.exe (
+    :: move bin\chunkbiomesgui.exe ..\chunkbiomesgui.exe
     echo [SUCCESS] GUI executable created successfully!
     echo   Location: build\bin\chunkbiomesgui.exe
+    start "" bin\chunkbiomesgui.exe
 ) else (
     echo [ERROR] GUI executable not created!
 )
 
-:: if exist bin\chunkbiomes.exe (
-::     echo [SUCCESS] Console executable created successfully!
-::     echo   Location: build\bin\chunkbiomes.exe
-:: ) else (
-::     echo [ERROR] Console executable not created!
-:: )
-
 cd ..
-echo.
-echo Press any key to exit...
-pause >nul
+:: echo.
+:: echo Press any key to exit...
+:: pause >nul

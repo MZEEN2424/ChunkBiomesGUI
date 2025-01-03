@@ -21,6 +21,7 @@ This tool supports
 It can
 - Search for seeds within a 32-bit or 64-bit range, or within a specifically-defined range;
 - Halt after encountering a result, or continue searching continuously; and
+- Finding multiple structures.
 - Clear, save, or copy the found seeds for later use.
 
 In the future, this tool will hopefully also support ravine and biome conditions.

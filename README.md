@@ -2,7 +2,8 @@
 
 This is a graphical user interface (GUI) version of [Chunkbiomes](https://github.com/Nel-S/Chunkbiomes), which ports certain filters from [Chunkbase](https://chunkbase.com/apps/seed-map) so features can be searched for across thousands of seeds every second. Currently this tool supports Windows platforms and is designed for *Minecraft: Bedrock Edition*, for helping users find seeds with specific Minecraft structures.
 
-![Screenshot_2467](https://github.com/user-attachments/assets/1fdc0020-48ad-47f1-a64e-05fad62018bd)
+![Screenshot_2505](https://github.com/user-attachments/assets/e2f93f74-59a6-46cd-8ce4-c9ed8687c18c)
+
 
 ## Features:
 This tool supports
@@ -45,11 +46,13 @@ This tool relies on Dear ImGUI, GLFW, and [the Cubiomes library](https://github.
 
 ---
 ## Screenshots
-Screenshots of BetaV1:
+Screenshots of BetaV2:
 
-![Screenshot_2469](https://github.com/user-attachments/assets/6ae463ee-cefc-4de1-a731-c4b2af7a5fb7)
-![Screenshot_2468](https://github.com/user-attachments/assets/a2dc6c21-de75-4a80-b61f-c2310e18ea4a)
-![Screenshot_2466](https://github.com/user-attachments/assets/ebcd8206-04fe-4c8e-9310-70b6a8f56574)
-![Screenshot_2470](https://github.com/user-attachments/assets/cc789c9a-d313-4b95-b051-827026efc7be)
+![Screenshot_2509](https://github.com/user-attachments/assets/75c6aef2-301c-4878-afb4-82d2538e0bbc)
+![Screenshot_2508](https://github.com/user-attachments/assets/343a20f4-4ed8-4c02-8f9d-f5f1a080c5ea)
+![Screenshot_2507](https://github.com/user-attachments/assets/25ccf9fe-781b-4e9b-8cb5-63919d97425e)
+![Screenshot_2506](https://github.com/user-attachments/assets/a647d865-5c0c-4960-b242-4fa61e95b75f)
+![Screenshot_2510](https://github.com/user-attachments/assets/b97bf82f-5357-4b52-9456-56e364dd2eb9)
+
 ---
 

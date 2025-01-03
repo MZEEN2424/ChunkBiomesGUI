@@ -62,11 +62,6 @@ private:
     bool useBedrockRange = false;  // Default to 64-bit range
 
     // Optimize batch size for thorough checking
-<<<<<<< HEAD
-    const int batchSize = 10000;  // Adjusted for better balance
-    const int statusUpdateInterval = 2500; // More frequent updates
-    const int generatorPoolSize = 8; // Keep multiple generators
-=======
     int OPTIMAL_BATCH_SIZE = 200000;  // Increased batch size
     const int STATUS_UPDATE_INTERVAL = 5000;  // Less frequent updates
     int generatorPoolSize = 64; // Keep multiple generators
@@ -74,21 +69,21 @@ private:
     // New structure for multiple structure search
     struct AttachedStructure {
         int structureType;
-        int searchRadius;
-        bool enabled;
-        Pos foundPos;
+        int maxDistance;
+        bool required;
         bool found;
+        Pos foundPos;
+
+        AttachedStructure() : 
+            structureType(Village), maxDistance(256), required(false), found(false), foundPos({0, 0}) {}
         
-        AttachedStructure(int type = Village, int radius = 256) 
-            : structureType(type), searchRadius(radius), enabled(false), found(false) {
-            foundPos = {0, 0};
-        }
+        AttachedStructure(int type, int dist, bool req) : 
+            structureType(type), maxDistance(dist), required(req), found(false), foundPos({0, 0}) {}
     };
     
     bool multiStructureMode = false;
     std::vector<AttachedStructure> attachedStructures;
     int baseStructureType = Village;  // The main structure to search around
->>>>>>> 92965f9 (.)
 
 public:
     StructureFinder() : 
@@ -167,7 +162,7 @@ public:
             
             if (multiStructureMode) {
                 for (auto& attached : attachedStructures) {
-                    if (attached.enabled) {
+                    if (attached.required) {
                         attached.found = false;
                     }
                 }
@@ -212,43 +207,6 @@ public:
                             localDist = std::uniform_int_distribution<int64_t>(INT64_MIN, INT64_MAX);
                         }
 
-<<<<<<< HEAD
-                        // Pre-allocate vectors to avoid reallocations
-                        std::vector<int64_t> seedBatch(batchSize);
-                        std::vector<Pos> posBatch(batchSize);
-                        int statusCounter = 0;
-                        
-                        while (!shouldStop) {
-                            // Generate and store all seeds first
-                            for (int j = 0; j < batchSize; j++) {
-                                seedBatch[j] = localDist(localGen);
-                            }
-                            
-                            // Process each seed in the batch
-                            for (int j = 0; j < batchSize && !shouldStop; j++) {
-                                int64_t seedToCheck = seedBatch[j];
-                                
-                                // Update status less frequently but still process every seed
-                                if (++statusCounter >= statusUpdateInterval) {
-                                    std::lock_guard<std::mutex> lock(structuresMutex);
-                                    currentSeed = seedToCheck;
-                                    std::string rangeType = useBedrockRange ? "2^32" : "2^64";
-                                    currentStatus = "[T" + std::to_string(i) + "] Processing seed " + std::to_string(seedToCheck) + 
-                                                 " | Range: " + rangeType;
-                                    statusCounter = 0;
-                                }
-
-                                Pos pos;
-                                bool found = findStructure(seedToCheck, &pos, searchRadius);
-                                seedsChecked++; // Increment after processing
-                                
-                                if (found) {
-                                    std::lock_guard<std::mutex> lock(structuresMutex);
-                                    structureNames.push_back(struct2str(selectedStructure));
-                                    positions.push_back(pos);
-                                    foundSeeds.push_back(seedToCheck);
-                                    currentStatus = "[FOUND] Seed: " + std::to_string(seedToCheck) +
-=======
                         int statusCounter = 0;
                         size_t seedIndex = 0;
                         
@@ -292,7 +250,7 @@ public:
                                     int enabledCount = 0;
                                     int foundCount = 0;
                                     for (const auto& attached : attachedStructures) {
-                                        if (attached.enabled) {
+                                        if (attached.required) {
                                             enabledCount++;
                                             if (attached.found) {
                                                 foundCount++;
@@ -315,7 +273,7 @@ public:
                                                   ": [" + std::to_string(pos.x) + ", " + std::to_string(pos.z) + "]";
                                         
                                         for (const auto& attached : attachedStructures) {
-                                            if (attached.enabled && attached.found) {
+                                            if (attached.required && attached.found) {
                                                 int dx = attached.foundPos.x - pos.x;
                                                 int dz = attached.foundPos.z - pos.z;
                                                 int distance = (int)sqrt(dx*dx + dz*dz);
@@ -338,7 +296,6 @@ public:
                                     positions.push_back(pos);
                                     foundSeeds.push_back(seedToCheck);
                                     currentStatus = "[FOUND] Seed: " + std::to_string(seedToCheck) + 
->>>>>>> 92965f9 (.)
                                                   " | Coords: [" + std::to_string(pos.x) + ", " + std::to_string(pos.z) + "]" +
                                                   " | Distance: " + std::to_string((int)sqrt(pow(pos.x, 2) + pow(pos.z, 2))) + "m";
                                     
@@ -639,9 +596,9 @@ public:
                     ImGui::TableNextColumn();
                     
                     // Enable checkbox
-                    bool enabled = attachedStructures[i].enabled;
+                    bool enabled = attachedStructures[i].required;
                     if (ImGui::Checkbox(("##enable" + std::to_string(i)).c_str(), &enabled)) {
-                        attachedStructures[i].enabled = enabled;
+                        attachedStructures[i].required = enabled;
                     }
 
                     // Structure type selection
@@ -653,11 +610,11 @@ public:
 
                     // Distance input
                     ImGui::TableNextColumn();
-                    int radius = attachedStructures[i].searchRadius;
+                    int radius = attachedStructures[i].maxDistance;
                     if (ImGui::InputInt(("##radius" + std::to_string(i)).c_str(), &radius, 16, 100)) {
                         if (radius < 16) radius = 16;
                         if (radius > 10000) radius = 10000;
-                        attachedStructures[i].searchRadius = radius;
+                        attachedStructures[i].maxDistance = radius;
                     }
 
                     // Status column
@@ -937,25 +894,6 @@ public:
 
     bool checkSurroundingBiomes(int centerX, int centerZ, int biomeId, int radius, Generator& g) {
         int count = 0;
-<<<<<<< HEAD
-        int totalChecks = 0;
-        const int halfRadius = radius >> 1;  // Fast division by 2
-        const float threshold90 = 0.9f;
-        const float threshold80 = 0.8f;
-        
-        // Use a more efficient checking pattern
-        for(int r = 0; r <= radius; r++) {
-            // Check only the perimeter for each radius
-            for(int x = centerX - r; x <= centerX + r; x += (r == 0 ? 1 : r)) {
-                for(int z = centerZ - r; z <= centerZ + r; z += (r == 0 ? 1 : r)) {
-                    if(abs(x - centerX) == r || abs(z - centerZ) == r) {
-                        totalChecks++;
-                        const int currentBiome = getBiomeAt(&g, 4, x >> 2, 319>>2, z >> 2);
-                        if(currentBiome == biomeId) {
-                            count++;
-                        } else if(r < halfRadius) {
-                            return false;  // Early exit for inner radius mismatch
-=======
         int total = 0;
         const float threshold = 0.9f;
         const int step = 8; // Check every 8 blocks for speed
@@ -993,39 +931,10 @@ public:
                             if((float)(count + remainingPoints)/(total + remainingPoints) < threshold) {
                                 return false;
                             }
->>>>>>> 92965f9 (.)
                         }
                     }
                 }
             }
-<<<<<<< HEAD
-            
-            // Early success check at half radius
-            if(r == halfRadius && count >= totalChecks * threshold90) {
-                return true;
-            }
-        }
-        
-        return count >= totalChecks * threshold80;
-    }
-
-    bool findStructure(int64_t seed, Pos* pos, int radius) {
-        static thread_local std::vector<Generator> localGenerators(generatorPoolSize);
-        static thread_local bool initialized = false;
-        static thread_local int currentGenerator = 0;
-        
-        if (!initialized) {
-            for (auto& g : localGenerators) {
-                setupGenerator(&g, MC_NEWEST, 0);
-            }
-            initialized = true;
-        }
-
-        // Use round-robin generator selection
-        Generator& g = localGenerators[currentGenerator];
-        currentGenerator = (currentGenerator + 1) % generatorPoolSize;
-        
-=======
         }
         
         return total > 0 && (float)count/total >= threshold;
@@ -1040,7 +949,6 @@ public:
             initialized = true;
         }
 
->>>>>>> 92965f9 (.)
         g.seed = seed;
         g.dim = DIM_OVERWORLD;
         applySeed(&g, DIM_OVERWORLD, seed);
@@ -1087,26 +995,6 @@ public:
                     continue;
                 }
 
-<<<<<<< HEAD
-                // Additional biome checks for Monument and Mansion
-                int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
-                
-                if (selectedStructure == Monument) {
-                    if (!isDeepOcean(biomeId)) continue;
-                    if (!checkSurroundingBiomes(p.x, p.z, biomeId, 32, g)) continue;
-                }
-                else if (selectedStructure == Mansion) {
-                    if (biomeId != dark_forest) continue;
-                    if (!checkSurroundingBiomes(p.x, p.z, dark_forest, 64, g)) continue;
-                }
-                else if (selectedStructure == Shipwreck) {
-                    if (!isShipwreckBiome(biomeId)) continue;
-                    if (!checkSurroundingBiomes(p.x, p.z, biomeId, 32, g)) continue;
-                }
-                else if (selectedStructure == Village) {
-                    if (!isVillageBiome(biomeId)) continue;
-                    if (!checkSurroundingBiomes(p.x, p.z, biomeId, 16, g)) continue;
-=======
                 // Additional biome checks only if necessary
                 if (selectedStructure == Monument || 
                     selectedStructure == Mansion || 
@@ -1122,7 +1010,6 @@ public:
                             continue;
                         }
                     }
->>>>>>> 92965f9 (.)
                 }
 
                 *pos = p;
@@ -1153,7 +1040,7 @@ public:
             int enabledCount = 0;
             int foundCount = 0;
             for (auto& attached : attachedStructures) {
-                if (attached.enabled) {
+                if (attached.required) {
                     enabledCount++;
                     attached.found = false;
                 }
@@ -1166,13 +1053,13 @@ public:
 
             // Now check for each enabled attached structure
             for (auto& attached : attachedStructures) {
-                if (!attached.enabled) continue;
+                if (!attached.required) continue;
 
                 // Try to find the attached structure within its radius from the base structure
                 bool found = false;
                 
                 // Search in regions around the base structure
-                int regionRadius = (attached.searchRadius / 512) + 1;
+                int regionRadius = (attached.maxDistance / 512) + 1;
 
                 // Prepare generator for this search
                 g.seed = seed;
@@ -1194,7 +1081,7 @@ public:
                             int dz = p.z - basePos->z;
                             int distance = (int)sqrt(dx*dx + dz*dz);
 
-                            if (distance > attached.searchRadius) {
+                            if (distance > attached.maxDistance) {
                                 continue;
                             }
 

@@ -26,11 +26,11 @@ private:
     std::atomic<bool> shouldStop{false};
     std::vector<std::thread> searchThreads;
     std::vector<std::string> structureNames;  // Change to std::vector<std::string>
+	Pos searchCenter{0,0};
     std::vector<Pos> positions;
     std::string currentStatus;
     bool isSearching = false;
-    std::atomic<int64_t> seedsChecked{0};
-    std::atomic<int64_t> currentSeed{0};
+    std::atomic<uint64_t> seedsChecked{0};
     std::mutex structuresMutex;
     std::vector<int64_t> foundSeeds;
     int selectedStructure = Village;
@@ -42,7 +42,8 @@ private:
     double lastCalculatedSeedsPerSecond{0.0};
 
     // Add a new member for continuous search
-    bool continuousSearch = false;
+    bool continuousSearch = true;
+	bool randomSearch = false;
 
     // Add a new member for seed range selection
     bool useBedrockRange = false;  // Default to 64-bit range
@@ -100,6 +101,7 @@ public:
             for (unsigned int i = 0; i < numThreads; i++) {
                 searchThreads.emplace_back([this, i]() {
                     try {
+						int64_t nonRandomSeed = (useBedrockRange ? INT32_MIN : INT64_MIN) + static_cast<int64_t>(i);
                         // Thread-local random generator
                         std::mt19937_64 localGen(rd() + static_cast<int>(i));
                         
@@ -114,19 +116,25 @@ public:
                         }
 
                         while (!shouldStop) {
-                            int64_t seedToCheck = localDist(localGen);
+                            int64_t seedToCheck = randomSearch ? localDist(localGen) : nonRandomSeed;
+                            if (!randomSearch) {
+                                nonRandomSeed += static_cast<int64_t>(numThreads);
+                                if (useBedrockRange && nonRandomSeed > INT32_MAX) {
+                                    isSearching = false;
+                                    break;
+                                }
+                            }
                             seedsChecked++;
                             
                             {
                                 std::lock_guard<std::mutex> lock(structuresMutex);
-                                currentSeed = seedToCheck;
                                 std::string rangeType = useBedrockRange ? "2^32" : "2^64";
                                 currentStatus = "[T" + std::to_string(i) + "] Processing seed " + std::to_string(seedToCheck) + 
                                              " | Range: " + rangeType;
                             }
 
                             Pos pos;
-                            if (!findStructure(seedToCheck, searchRadius, pos)) continue;
+                            if (!findStructure(seedToCheck, searchCenter, searchRadius, pos)) continue;
                             std::lock_guard<std::mutex> lock(structuresMutex);
                             structureNames.push_back(struct2str(selectedStructure));
                             positions.push_back(pos);
@@ -174,22 +182,21 @@ public:
     }
 
     void renderAboutTab() {
-        ImGui::Text("ChunkBiomes - Minecraft Seed Finder");
+        ImGui::Text("ChunkBiomesGUI - Minecraft Seed Finder");
+
+        // Project Description
+        ImGui::Spacing();
+        ImGui::TextWrapped("A desktop tool for finding Minecraft: Bedrock Edition seeds with specific structures.");
         ImGui::Separator();
 
         // Important Notice about Chunkbase
         ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "NOTICE:");
         ImGui::TextWrapped(
-            "This application is a desktop port of Chunkbase's seed finding functionality. "
-            "The core functionality and algorithms are based on Chunkbase (https://www.chunkbase.com/), "
-            "created by Alexander Gundermann and the Chunkbase development team. "
-            "Please support the original project by visiting their website."
+            "This application is a desktop port of select Chunkbase filters, the algorithms of which "
+            "were originally created by Alexander Gundermann and any other Chunkbase developers. "
+            "The rights to those specific portions of the code belong to them. "
+            "We also encourage you to visit their original website (https://chunkbase.com/apps/seed-map)."
         );
-
-        // Project Description
-        ImGui::Spacing();
-        ImGui::TextWrapped("A desktop tool for finding Minecraft Bedrock seeds with specific structures and biome characteristics, "
-                          "based on Chunkbase's functionality.");
 
         // Key Features Section
         ImGui::Text("\nKey Features:");
@@ -228,12 +235,10 @@ public:
         // Contributors
         ImGui::Separator();
         ImGui::Text("Credits and Contributors:");
-        ImGui::BulletText("Alexander Gundermann - Original Creator (Chunkbase)");
-        ImGui::BulletText("Chunkbase Development Team - Original Implementation");
+        ImGui::BulletText("Alexander Gundermann + Chunkbase Development Team - Original Creators (Chunkbase)");
         ImGui::BulletText("NelS - Porter");
         ImGui::BulletText("MZEEN - GUI Contributions");
         ImGui::BulletText("Fragrant_Result_186 - Project Helper");
-        ImGui::BulletText("Cubitect - Cubiomes Library (Public Domain)");
 
         // Version and License
         ImGui::Separator();
@@ -247,8 +252,8 @@ public:
 
         // GitHub and Support
         ImGui::Separator();
-        if (ImGui::Button("Visit Chunkbase")) {
-            system("start https://www.chunkbase.com/");
+        if (ImGui::Button("View Source")) {
+            system("start https://github.com/MZEEN2424/ChunkBiomesGUI");
         }
         ImGui::SameLine();
         if (ImGui::Button("Report an Issue")) {
@@ -258,7 +263,7 @@ public:
 
     void renderRavineTab() {
         ImGui::Text("Ravine Finder (Coming Soon)");
-        ImGui::TextWrapped("This feature will help you locate ravines in Minecraft Bedrock seeds.");
+        ImGui::TextWrapped("This feature will help you locate ravines in Minecraft: Bedrock Edition seeds.");
         
         // Placeholder for future ravine search functionality
         ImGui::Separator();
@@ -267,7 +272,7 @@ public:
 
     void renderBiomeTab() {
         ImGui::Text("Biome Finder (Coming Soon)");
-        ImGui::TextWrapped("This feature will help you find specific biomes in Minecraft Java and Bedrock seeds.");
+        ImGui::TextWrapped("This feature will help you find specific biomes in Minecraft: Java Edition and Minecraft: Bedrock Edition seeds.");
         
         // Placeholder for future biome search functionality
         ImGui::Separator();
@@ -300,7 +305,7 @@ public:
             std::ofstream outFile(szFile);
             if (outFile.is_open()) {
                 // Write header
-                outFile << "Chunk Biomes - Found Seeds\n";
+                outFile << "ChunkBiomes GUI - Found Seeds\n";
                 outFile << "Structure: " << struct2str(selectedStructure) << "\n";
                 outFile << "Search Radius: " << searchRadius << "\n";
                 outFile << "------------------------\n";
@@ -399,10 +404,22 @@ public:
         if (searchRadius < 16) searchRadius = 16;
         if (searchRadius > 10000) searchRadius = 10000;
         ImGui::PopItemWidth();
+		
+		ImGui::PushItemWidth(120);
+        ImGui::InputInt("Search Center X", &searchCenter.x);
+        if (searchCenter.x < -30000000) searchCenter.x = -30000000;
+        if (searchCenter.x >  29999999) searchCenter.x =  29999999;
+        ImGui::SameLine();
+        ImGui::InputInt("Search Center Z", &searchCenter.z);
+        if (searchCenter.z < -30000000) searchCenter.z = -30000000;
+        if (searchCenter.z >  29999999) searchCenter.z =  29999999;
+        ImGui::PopItemWidth();
 
         // Continuous Search Checkbox
         ImGui::Separator();
-        ImGui::Checkbox("Continuous Search", &continuousSearch);
+        ImGui::Checkbox("Random Search", &randomSearch);
+        ImGui::SameLine();
+		ImGui::Checkbox("Continuous Search", &continuousSearch);
         ImGui::SameLine();
         ImGui::TextDisabled("(?)");
         if (ImGui::IsItemHovered()) {
@@ -443,10 +460,10 @@ public:
             ImGui::Text("Processing %.0f seeds/second", seedsPerSecond);
             
             // Display total seeds checked
-            ImGui::Text("Total Seeds Checked: %lld", seedsChecked.load());
+            ImGui::Text("Total Seeds Checked: %" PRIu64, seedsChecked.load());
         } else if (seedsChecked > 0) {
             ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Search Stopped");
-            ImGui::Text("Total Seeds Checked: %lld", seedsChecked.load());
+            ImGui::Text("Total Seeds Checked: %" PRIu64, seedsChecked.load());
         }
 
         ImGui::Separator();
@@ -491,9 +508,7 @@ public:
                 // Copy Seed button
                 ImGui::SameLine();
                 if (ImGui::Button(("Copy Seed##" + std::to_string(i)).c_str())) {
-                    char seedStr[32];
-                    snprintf(seedStr, sizeof(seedStr), "%lld", foundSeeds[i]);
-                    ImGui::SetClipboardText(seedStr);
+                    ImGui::SetClipboardText(std::to_string(foundSeeds[i]).c_str());
                 }
             }
             
@@ -612,7 +627,10 @@ public:
         return count >= totalChecks * 0.8;
     }
 
-    bool findStructure(int64_t seed, int radius, Pos &pos) {
+    bool findStructure(int64_t seed, const Pos &center, int radius, Pos &pos) {
+		// Temporary, for testing purposes
+		pos.x = pos.z = 8;
+		return std::abs(seed % 1000) == 517;
         std::lock_guard<std::mutex> lock(generatorMutex);
         
         setupGenerator(&g, MC_NEWEST, 0);

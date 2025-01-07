@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(chunkbiomes)
+project(chunkbiomesgui)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
@@ -15,8 +15,8 @@ find_package(OpenGL REQUIRED)
 # Add GLFW subdirectory
 add_subdirectory(glfw)
 
-# Add cubiomes subdirectory
-add_subdirectory(cubiomes)
+# Add Chunkbiomes subdirectory
+add_subdirectory(chunkbiomes)
 
 # Create ImGui library
 add_library(imgui STATIC
@@ -40,40 +40,16 @@ target_link_libraries(imgui PUBLIC
     ${OPENGL_LIBRARIES}
 )
 
-# Create Bfinders library
-add_library(bfinders STATIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/Bfinders.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Bfinders.h"
-)
-
-target_include_directories(bfinders PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/cubiomes"
-)
-
-target_link_libraries(bfinders PUBLIC
-    cubiomes
-)
-
-# Create chunkbiomes executable
-add_executable(chunkbiomes "${CMAKE_CURRENT_SOURCE_DIR}/test.c")
-target_link_libraries(chunkbiomes PRIVATE 
-    cubiomes
-    bfinders
-)
-target_include_directories(chunkbiomes PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/cubiomes")
-
 # Create GUI executable
 add_executable(chunkbiomesgui "${CMAKE_CURRENT_SOURCE_DIR}/ChunkBiomesGUI.cpp")
 target_link_libraries(chunkbiomesgui PRIVATE
-    bfinders
-    cubiomes
+    chunkbiomes
     imgui
     glfw
     ${OPENGL_LIBRARIES}
 )
 target_include_directories(chunkbiomesgui PRIVATE 
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cubiomes"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Chunkbiomes"
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui"
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends"
 )
@@ -88,7 +64,7 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 # The application will create the file if it doesn't exist
 
 # Install targets
-install(TARGETS chunkbiomes chunkbiomesgui
+install(TARGETS chunkbiomesgui
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib

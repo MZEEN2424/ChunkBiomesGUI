@@ -19,6 +19,58 @@
 #include <cmath>
 #include <limits>
 #include <Windows.h>
+#include <algorithm> // Include algorithm header
+#include "Brng.h" // Include Brng.h for MersenneTwister
+
+// Function to show Windows Save File Dialog
+std::string ShowSaveFileDialog() {
+    OPENFILENAMEA ofn;
+    char szFile[260] = { 0 };
+    
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = NULL;
+    ofn.lpstrFile = szFile;
+    ofn.nMaxFile = sizeof(szFile);
+    ofn.lpstrFilter = "Color Settings\0*.txt\0All\0*.*\0";
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+    
+    if (GetSaveFileNameA(&ofn)) {
+        std::string filename = ofn.lpstrFile;
+        if (filename.find(".txt") == std::string::npos) {
+            filename += ".txt";
+        }
+        return filename;
+    }
+    return "";
+}
+
+// Function to show Windows Open File Dialog
+std::string ShowOpenFileDialog() {
+    OPENFILENAMEA ofn;
+    char szFile[260] = { 0 };
+    
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = NULL;
+    ofn.lpstrFile = szFile;
+    ofn.nMaxFile = sizeof(szFile);
+    ofn.lpstrFilter = "Color Settings\0*.txt\0All\0*.*\0";
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    
+    if (GetOpenFileNameA(&ofn)) {
+        return ofn.lpstrFile;
+    }
+    return "";
+}
 
 extern "C" {
 #include "cubiomes/generator.h"
@@ -26,11 +78,183 @@ extern "C" {
 #include "Bfinders.h"
 }
 
+// Forward declare ApplyCustomColors
+void ApplyCustomColors();
+
+struct UIColors {
+    ImVec4 text = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+    ImVec4 background = ImVec4(0.05f, 0.05f, 0.05f, 1.00f);
+    ImVec4 frame = ImVec4(0.00f, 0.20f, 0.00f, 1.00f);
+    ImVec4 button = ImVec4(0.00f, 0.40f, 0.00f, 1.00f);
+    ImVec4 header = ImVec4(0.00f, 0.30f, 0.00f, 1.00f);
+    ImVec4 border = ImVec4(0.00f, 0.50f, 0.00f, 0.50f);
+    ImVec4 accent = ImVec4(0.00f, 1.00f, 0.00f, 1.00f);
+
+    // Target colors for smooth transitions
+    ImVec4 targetText = text;
+    ImVec4 targetBackground = background;
+    ImVec4 targetFrame = frame;
+    ImVec4 targetButton = button;
+    ImVec4 targetHeader = header;
+    ImVec4 targetBorder = border;
+    ImVec4 targetAccent = accent;
+} uiColors;
+
+// Global transition speed
+static float transitionSpeed = 0.1f;
+
+// Helper function to smoothly interpolate between colors
+ImVec4 LerpColor(const ImVec4& current, const ImVec4& target, float t) {
+    return ImVec4(
+        current.x + (target.x - current.x) * t,
+        current.y + (target.y - current.y) * t,
+        current.z + (target.z - current.z) * t,
+        current.w + (target.w - current.w) * t
+    );
+}
+
+void UpdateColors() {
+    // Smoothly transition each color
+    uiColors.text = LerpColor(uiColors.text, uiColors.targetText, transitionSpeed);
+    uiColors.background = LerpColor(uiColors.background, uiColors.targetBackground, transitionSpeed);
+    uiColors.frame = LerpColor(uiColors.frame, uiColors.targetFrame, transitionSpeed);
+    uiColors.button = LerpColor(uiColors.button, uiColors.targetButton, transitionSpeed);
+    uiColors.header = LerpColor(uiColors.header, uiColors.targetHeader, transitionSpeed);
+    uiColors.border = LerpColor(uiColors.border, uiColors.targetBorder, transitionSpeed);
+    uiColors.accent = LerpColor(uiColors.accent, uiColors.targetAccent, transitionSpeed);
+    
+    ApplyCustomColors();
+}
+
+void ApplyCustomColors() {
+    ImGuiStyle& style = ImGui::GetStyle();
+    ImVec4* colors = style.Colors;
+
+    // Apply custom colors
+    colors[ImGuiCol_Text] = uiColors.text;
+    colors[ImGuiCol_TextDisabled] = ImVec4(uiColors.text.x, uiColors.text.y, uiColors.text.z, 0.50f);
+    
+    // Background colors
+    colors[ImGuiCol_WindowBg] = uiColors.background;
+    colors[ImGuiCol_ChildBg] = uiColors.background;
+    colors[ImGuiCol_PopupBg] = uiColors.background;
+    colors[ImGuiCol_MenuBarBg] = uiColors.background;
+    colors[ImGuiCol_ScrollbarBg] = ImVec4(uiColors.background.x * 0.8f, uiColors.background.y * 0.8f, uiColors.background.z * 0.8f, 0.60f);
+    
+    colors[ImGuiCol_Border] = uiColors.border;
+    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    
+    // Frame backgrounds
+    colors[ImGuiCol_FrameBg] = uiColors.frame;
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(uiColors.frame.x + 0.1f, uiColors.frame.y + 0.1f, uiColors.frame.z + 0.1f, 1.0f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(uiColors.frame.x + 0.2f, uiColors.frame.y + 0.2f, uiColors.frame.z + 0.2f, 1.0f);
+    
+    // Title backgrounds
+    colors[ImGuiCol_TitleBg] = uiColors.header;
+    colors[ImGuiCol_TitleBgActive] = ImVec4(uiColors.header.x + 0.1f, uiColors.header.y + 0.1f, uiColors.header.z + 0.1f, 1.0f);
+    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(uiColors.header.x, uiColors.header.y, uiColors.header.z, 0.51f);
+    
+    // Scrollbar
+    colors[ImGuiCol_ScrollbarGrab] = uiColors.button;
+    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(uiColors.button.x + 0.1f, uiColors.button.y + 0.1f, uiColors.button.z + 0.1f, 1.0f);
+    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(uiColors.button.x + 0.2f, uiColors.button.y + 0.2f, uiColors.button.z + 0.2f, 1.0f);
+    
+    // Interactive elements
+    colors[ImGuiCol_CheckMark] = uiColors.accent;
+    colors[ImGuiCol_SliderGrab] = uiColors.accent;
+    colors[ImGuiCol_SliderGrabActive] = ImVec4(uiColors.accent.x + 0.2f, uiColors.accent.y + 0.2f, uiColors.accent.z + 0.2f, 1.0f);
+    
+    // Buttons
+    colors[ImGuiCol_Button] = uiColors.button;
+    colors[ImGuiCol_ButtonHovered] = ImVec4(uiColors.button.x + 0.1f, uiColors.button.y + 0.1f, uiColors.button.z + 0.1f, 1.0f);
+    colors[ImGuiCol_ButtonActive] = ImVec4(uiColors.button.x + 0.2f, uiColors.button.y + 0.2f, uiColors.button.z + 0.2f, 1.0f);
+    
+    // Headers
+    colors[ImGuiCol_Header] = uiColors.header;
+    colors[ImGuiCol_HeaderHovered] = ImVec4(uiColors.header.x + 0.1f, uiColors.header.y + 0.1f, uiColors.header.z + 0.1f, 1.0f);
+    colors[ImGuiCol_HeaderActive] = ImVec4(uiColors.header.x + 0.2f, uiColors.header.y + 0.2f, uiColors.header.z + 0.2f, 1.0f);
+    
+    // Tabs
+    colors[ImGuiCol_Tab] = uiColors.button;
+    colors[ImGuiCol_TabHovered] = ImVec4(uiColors.button.x + 0.1f, uiColors.button.y + 0.1f, uiColors.button.z + 0.1f, 1.0f);
+    colors[ImGuiCol_TabActive] = ImVec4(uiColors.button.x + 0.2f, uiColors.button.y + 0.2f, uiColors.button.z + 0.2f, 1.0f);
+    colors[ImGuiCol_TabUnfocused] = ImVec4(uiColors.button.x * 0.8f, uiColors.button.y * 0.8f, uiColors.button.z * 0.8f, 1.0f);
+    colors[ImGuiCol_TabUnfocusedActive] = uiColors.button;
+}
+
+// Function to save UI colors to a file
+void SaveUIColors(const char* filename) {
+    std::ofstream file(filename);
+    if (file.is_open()) {
+        // Save each color component with precision
+        file << std::fixed << std::setprecision(6);
+        file << uiColors.text.x << " " << uiColors.text.y << " " << uiColors.text.z << " " << uiColors.text.w << "\n";
+        file << uiColors.background.x << " " << uiColors.background.y << " " << uiColors.background.z << " " << uiColors.background.w << "\n";
+        file << uiColors.frame.x << " " << uiColors.frame.y << " " << uiColors.frame.z << " " << uiColors.frame.w << "\n";
+        file << uiColors.button.x << " " << uiColors.button.y << " " << uiColors.button.z << " " << uiColors.button.w << "\n";
+        file << uiColors.header.x << " " << uiColors.header.y << " " << uiColors.header.z << " " << uiColors.header.w << "\n";
+        file << uiColors.border.x << " " << uiColors.border.y << " " << uiColors.border.z << " " << uiColors.border.w << "\n";
+        file << uiColors.accent.x << " " << uiColors.accent.y << " " << uiColors.accent.z << " " << uiColors.accent.w << "\n";
+        file.close();
+    }
+}
+
+// Function to load UI colors from a file
+bool LoadUIColors(const char* filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) return false;
+
+    try {
+        float r, g, b, a;
+        UIColors newColors = uiColors;  // Create a temporary copy
+        
+        // Load text color
+        if (file >> r >> g >> b >> a) newColors.text = ImVec4(r, g, b, a);
+        // Load background color
+        if (file >> r >> g >> b >> a) newColors.background = ImVec4(r, g, b, a);
+        // Load frame color
+        if (file >> r >> g >> b >> a) newColors.frame = ImVec4(r, g, b, a);
+        // Load button color
+        if (file >> r >> g >> b >> a) newColors.button = ImVec4(r, g, b, a);
+        // Load header color
+        if (file >> r >> g >> b >> a) newColors.header = ImVec4(r, g, b, a);
+        // Load border color
+        if (file >> r >> g >> b >> a) newColors.border = ImVec4(r, g, b, a);
+        // Load accent color
+        if (file >> r >> g >> b >> a) newColors.accent = ImVec4(r, g, b, a);
+
+        file.close();
+        
+        // Update both current and target colors
+        uiColors = newColors;
+        uiColors.targetText = uiColors.text;
+        uiColors.targetBackground = uiColors.background;
+        uiColors.targetFrame = uiColors.frame;
+        uiColors.targetButton = uiColors.button;
+        uiColors.targetHeader = uiColors.header;
+        uiColors.targetBorder = uiColors.border;
+        uiColors.targetAccent = uiColors.accent;
+        
+        ApplyCustomColors();
+        return true;
+    }
+    catch (...) {
+        file.close();
+        return false;
+    }
+}
+
+struct FoundStructure {
+    uint64_t seed;
+    Pos pos;
+    bool isZombieVillage;
+};
+
 class StructureFinder {
 private:
-    // Random generation for different ranges
     std::random_device rd;
-    std::mt19937_64 gen;  // Using 64-bit Mersenne Twister for full range support
+    std::mt19937_64 gen;
+    std::uniform_int_distribution<uint64_t> dis;
     const int numThreads = std::max(1, (int)std::thread::hardware_concurrency());
 
     // Make sure Generator is thread-safe
@@ -52,8 +276,9 @@ private:
 
     // Add these to track search performance
     std::chrono::steady_clock::time_point searchStartTime;
-    std::chrono::steady_clock::time_point searchEndTime;
     double lastCalculatedSeedsPerSecond{0.0};
+    double elapsedSearchTime = 0.0;
+    bool timerRunning = false;
 
     // Add a new member for continuous search
     bool continuousSearch = false;
@@ -169,6 +394,11 @@ public:
             }
         }
 
+        // Start the timer
+        searchStartTime = std::chrono::steady_clock::now();
+        timerRunning = true;
+        elapsedSearchTime = 0.0;
+
         shouldStop = false;
         isSearching = true;
         
@@ -244,7 +474,8 @@ public:
                                 if (multiStructureMode) {
                                     // Create combined structure description
                                     std::string structures = std::string(struct2str(baseStructureType)) + 
-                                                           " [" + std::to_string(pos.x) + ", " + std::to_string(pos.z) + "]";
+                                                           " [" + std::to_string(pos.x) +
+                                                           ", " + std::to_string(pos.z) + "]";
                                     
                                     // Count enabled and found structures
                                     int enabledCount = 0;
@@ -255,7 +486,7 @@ public:
                                             if (attached.found) {
                                                 foundCount++;
                                                 structures += "\n+ " + std::string(struct2str(attached.structureType)) +
-                                                            " [" + std::to_string(attached.foundPos.x) + 
+                                                            " [" + std::to_string(attached.foundPos.x) +
                                                             ", " + std::to_string(attached.foundPos.z) + "]";
                                             }
                                         }
@@ -269,8 +500,9 @@ public:
                                         
                                         // Update status with found information
                                         std::string foundMsg = "[FOUND] Seed: " + std::to_string(seedToCheck) + "\n";
-                                        foundMsg += "Base " + std::string(struct2str(baseStructureType)) + 
-                                                  ": [" + std::to_string(pos.x) + ", " + std::to_string(pos.z) + "]";
+                                        foundMsg += "Base " + std::string(struct2str(baseStructureType)) +
+                                                  ": [" + std::to_string(pos.x) +
+                                                  ", " + std::to_string(pos.z) + "]";
                                         
                                         for (const auto& attached : attachedStructures) {
                                             if (attached.required && attached.found) {
@@ -278,8 +510,8 @@ public:
                                                 int dz = attached.foundPos.z - pos.z;
                                                 int distance = (int)sqrt(dx*dx + dz*dz);
                                                 
-                                                foundMsg += "\n" + std::string(struct2str(attached.structureType)) + 
-                                                          ": [" + std::to_string(attached.foundPos.x) + 
+                                                foundMsg += "\n" + std::string(struct2str(attached.structureType)) +
+                                                          ": [" + std::to_string(attached.foundPos.x) +
                                                           ", " + std::to_string(attached.foundPos.z) + "]" +
                                                           " (Distance: " + std::to_string(distance) + "m)";
                                             }
@@ -295,8 +527,9 @@ public:
                                     structureNames.push_back(struct2str(selectedStructure));
                                     positions.push_back(pos);
                                     foundSeeds.push_back(seedToCheck);
-                                    currentStatus = "[FOUND] Seed: " + std::to_string(seedToCheck) + 
-                                                  " | Coords: [" + std::to_string(pos.x) + ", " + std::to_string(pos.z) + "]" +
+                                    currentStatus = "[FOUND] Seed: " + std::to_string(seedToCheck) +
+                                                  " | Coords: [" + std::to_string(pos.x) +
+                                                  ", " + std::to_string(pos.z) + "]" +
                                                   " | Distance: " + std::to_string((int)sqrt(pow(pos.x, 2) + pow(pos.z, 2))) + "m";
                                     
                                     if (!continuousSearch) {
@@ -323,7 +556,12 @@ public:
     void stopSearch() {
         shouldStop = true;
         isSearching = false;
-        searchEndTime = std::chrono::steady_clock::now();
+        
+        // Stop the timer and calculate final time
+        if (timerRunning) {
+            elapsedSearchTime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - searchStartTime).count();
+            timerRunning = false;
+        }
         
         // Properly join all threads
         for (auto& thread : searchThreads) {
@@ -403,7 +641,7 @@ public:
 
         // Version and License
         ImGui::Separator();
-        ImGui::Text("Version: BetaV2");
+        ImGui::Text("Version: BetaV3");
         ImGui::TextWrapped(
             "License Information:\n"
             "- Core functionality and algorithms: Rights reserved by Chunkbase\n"
@@ -593,9 +831,9 @@ public:
 
                 for (size_t i = 0; i < attachedStructures.size(); i++) {
                     ImGui::TableNextRow();
-                    ImGui::TableNextColumn();
                     
                     // Enable checkbox
+                    ImGui::TableNextColumn();
                     bool enabled = attachedStructures[i].required;
                     if (ImGui::Checkbox(("##enable" + std::to_string(i)).c_str(), &enabled)) {
                         attachedStructures[i].required = enabled;
@@ -684,6 +922,12 @@ public:
         ImGui::Separator();
         ImGui::Text("Search Status:");
 
+        // Display timer
+        if (timerRunning) {
+            elapsedSearchTime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - searchStartTime).count();
+        }
+        ImGui::Text("Search Time: %.2f seconds", elapsedSearchTime);
+
         // Status message
         if (isSearching) {
             std::string status;
@@ -706,15 +950,13 @@ public:
 
         ImGui::Separator();
 
-        // Display found seeds
+        // Display found seeds in a table format
         if (!foundSeeds.empty()) {
-            
-            // Found Seeds header with Clear and Save buttons
             ImGui::Text("Found Seeds:");
             
             // Align buttons to the right
             float windowWidth = ImGui::GetWindowWidth();
-            ImGui::SameLine(windowWidth - 200);  // Adjust spacing for two buttons
+            ImGui::SameLine(windowWidth - 200);
             if (ImGui::Button("Clear Seeds")) {
                 foundSeeds.clear();
                 structureNames.clear();
@@ -726,58 +968,100 @@ public:
                 saveSeedsToFile();
             }
 
-            // Create a scrollable region for found seeds
-            ImGui::BeginChild("Found Seeds List", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar);
-            
-            // Display each seed on a separate line with a copy button
-            for (size_t i = 0; i < foundSeeds.size(); ++i) {
-                // Display seed with additional structure info if available
-                if (i < structureNames.size() && i < positions.size()) {
-                    ImGui::Text("%lld - %s (X: %d, Z: %d)", 
-                        foundSeeds[i], 
-                        structureNames[i].c_str(), 
-                        positions[i].x, 
-                        positions[i].z
-                    );
-                } else {
+            // Create a scrollable table for seeds
+            if (ImGui::BeginTable("SeedsTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | 
+                                                  ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | 
+                                                  ImGuiTableFlags_Reorderable, ImVec2(0, 300))) {
+                
+                // Setup columns
+                ImGui::TableSetupColumn("No.", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+                ImGui::TableSetupColumn("Seed", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Structure", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Coordinates", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+                ImGui::TableHeadersRow();
+
+                // Display seeds in rows
+                for (size_t i = 0; i < foundSeeds.size(); ++i) {
+                    ImGui::TableNextRow();
+                    
+                    // Number column
+                    ImGui::TableNextColumn();
+                    ImGui::Text("#%zu", i + 1);
+
+                    // Seed column
+                    ImGui::TableNextColumn();
                     ImGui::Text("%lld", foundSeeds[i]);
+
+                    // Structure and Coordinates columns
+                    ImGui::TableNextColumn();
+                    ImGui::TableNextColumn();
+                    if (i < structureNames.size() && i < positions.size()) {
+                        std::string structureInfo = structureNames[i];
+                        std::string coordsInfo;
+                        
+                        // Check if this is a multi-structure result
+                        size_t newlinePos = structureInfo.find('\n');
+                        if (newlinePos != std::string::npos) {
+                            // Multiple structures
+                            std::string baseStructure = structureInfo.substr(0, newlinePos);
+                            std::string attachedStructures = structureInfo.substr(newlinePos + 1);
+                            
+                            // Display base structure in Structure column
+                            ImGui::TableSetColumnIndex(2); // Go back to Structure column
+                            ImGui::Text("%s", baseStructure.c_str());
+                            
+                            // Display coordinates with structure names
+                            ImGui::TableSetColumnIndex(3); // Go to Coordinates column
+                            
+                            // First display base structure coordinates
+                            size_t bracketStart = baseStructure.find('[');
+                            size_t bracketEnd = baseStructure.find(']');
+                            if (bracketStart != std::string::npos && bracketEnd != std::string::npos) {
+                                std::string baseCoords = baseStructure.substr(bracketStart, bracketEnd - bracketStart + 1);
+                                ImGui::Text("Base Structure: %s", baseCoords.c_str());
+                            }
+                            
+                            // Then display attached structures' coordinates
+                            std::istringstream attachedStream(attachedStructures);
+                            std::string line;
+                            while (std::getline(attachedStream, line)) {
+                                if (!line.empty()) {
+                                    size_t nameEnd = line.find('[');
+                                    if (nameEnd != std::string::npos) {
+                                        std::string structName = line.substr(2, nameEnd - 3); // Remove "+ " prefix
+                                        std::string coords = line.substr(nameEnd);
+                                        coords = coords.substr(0, coords.find(" (Distance")); // Remove distance info
+                                        ImGui::Text("%s: %s", structName.c_str(), coords.c_str());
+                                    }
+                                }
+                            }
+                        } else {
+                            // Single structure
+                            ImGui::TableSetColumnIndex(2); // Go back to Structure column
+                            ImGui::Text("%s", structureNames[i].c_str());
+                            
+                            ImGui::TableSetColumnIndex(3); // Go to Coordinates column
+                            ImGui::Text("[X: %d, Z: %d]", positions[i].x, positions[i].z);
+                        }
+                    }
+
+                    // Actions column
+                    ImGui::TableNextColumn();
+                    ImGui::PushID(static_cast<int>(i));
+                    if (ImGui::Button("Copy")) {
+                        char seedStr[32];
+                        snprintf(seedStr, sizeof(seedStr), "%lld", foundSeeds[i]);
+                        ImGui::SetClipboardText(seedStr);
+                    }
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("Copy seed to clipboard");
+                    }
+                    ImGui::PopID();
                 }
                 
-                // Copy Seed button
-                ImGui::SameLine();
-                if (ImGui::Button(("Copy Seed##" + std::to_string(i)).c_str())) {
-                    char seedStr[32];
-                    snprintf(seedStr, sizeof(seedStr), "%lld", foundSeeds[i]);
-                    ImGui::SetClipboardText(seedStr);
-                }
+                ImGui::EndTable();
             }
-            
-            ImGui::EndChild();
-        }
-
-        // Display found structures
-        if (!structureNames.empty()) {
-            
-            // Found Structures header
-            ImGui::Text("Found Structures:");
-
-            // Create a scrollable region for found structures
-            ImGui::BeginChild("Found Structures List", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar);
-            
-            // Display each structure
-            for (size_t i = 0; i < structureNames.size(); ++i) {
-                if (i < positions.size()) {
-                    ImGui::Text("%s - X: %d, Z: %d", 
-                        structureNames[i].c_str(), 
-                        positions[i].x, 
-                        positions[i].z
-                    );
-                } else {
-                    ImGui::Text("%s", structureNames[i].c_str());
-                }
-            }
-            
-            ImGui::EndChild();
         }
     }
 
@@ -804,6 +1088,56 @@ public:
                 ImGui::SetTooltip("Number of parallel generators\nRecommended: Set to number of CPU threads");
             }
             
+            // UI Color Settings
+            ImGui::Separator();
+            ImGui::Text("UI Colors");
+            bool colorChanged = false;
+            
+            ImGui::TextColored(uiColors.text, "Current Colors:");
+            colorChanged |= ImGui::ColorEdit3("Main Text", (float*)&uiColors.targetText);
+            colorChanged |= ImGui::ColorEdit3("Background", (float*)&uiColors.targetBackground);
+            colorChanged |= ImGui::ColorEdit3("Frame Background", (float*)&uiColors.targetFrame);
+            colorChanged |= ImGui::ColorEdit3("Interactive Elements", (float*)&uiColors.targetAccent);
+            colorChanged |= ImGui::ColorEdit3("Buttons & Tabs", (float*)&uiColors.targetButton);
+            colorChanged |= ImGui::ColorEdit3("Headers", (float*)&uiColors.targetHeader);
+            colorChanged |= ImGui::ColorEdit4("Border", (float*)&uiColors.targetBorder);
+
+            // Add transition speed slider
+            static float transitionSpeed = 0.1f;
+            ImGui::SliderFloat("Transition Speed", &transitionSpeed, 0.01f, 0.5f, "%.2f");
+
+            if (ImGui::Button("Reset Colors")) {
+                UIColors defaultColors;
+                uiColors.targetText = defaultColors.text;
+                uiColors.targetBackground = defaultColors.background;
+                uiColors.targetFrame = defaultColors.frame;
+                uiColors.targetButton = defaultColors.button;
+                uiColors.targetHeader = defaultColors.header;
+                uiColors.targetBorder = defaultColors.border;
+                uiColors.targetAccent = defaultColors.accent;
+            }
+
+            ImGui::Separator();
+            ImGui::Text("Save/Load UI Colors");
+            if (ImGui::Button("Save UI Colors")) {
+                std::string filename = ShowSaveFileDialog();
+                if (!filename.empty()) {
+                    SaveUIColors(filename.c_str());
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Load UI Colors")) {
+                std::string filename = ShowOpenFileDialog();
+                if (!filename.empty()) {
+                    LoadUIColors(filename.c_str());
+                    colorChanged = true;
+                }
+            }
+
+            if (colorChanged) {
+                ApplyCustomColors();
+            }
+
             ImGui::EndTabItem();
         }
     }
@@ -846,16 +1180,23 @@ public:
     }
 
     bool isDeepOcean(int biomeId) {
-        return biomeId == deep_ocean || 
-               biomeId == deep_frozen_ocean || 
-               biomeId == deep_cold_ocean || 
+        return biomeId == deep_ocean ||
+               biomeId == deep_frozen_ocean ||
+               biomeId == deep_cold_ocean ||
                biomeId == deep_lukewarm_ocean;
     }
 
     bool isShipwreckBiome(int biomeId) {
-        return biomeId == beach ||
-               biomeId == snowy_beach ||
-               biomeId == ocean;
+       return biomeId == beach ||
+           biomeId == snowy_beach ||
+           biomeId == ocean ||
+           biomeId == frozen_ocean ||
+           biomeId == deep_frozen_ocean ||
+           biomeId == cold_ocean ||
+           biomeId == deep_cold_ocean ||
+           biomeId == lukewarm_ocean ||
+           biomeId == deep_lukewarm_ocean ||
+           biomeId == warm_ocean;
     }
 
     bool isVillageBiome(int biomeId) {
@@ -878,7 +1219,7 @@ public:
 
     double calculateSeedsPerSecond() {
         auto now = std::chrono::steady_clock::now();
-        auto endTime = isSearching ? now : searchEndTime;
+        auto endTime = isSearching ? now : std::chrono::steady_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - searchStartTime).count();
         
         if (duration > 0) {
@@ -941,7 +1282,7 @@ public:
     }
 
     bool findStructure(int64_t seed, Pos* pos, int radius) {
-        static thread_local Generator g;  // Single generator per thread is enough
+        static thread_local Generator g;
         static thread_local bool initialized = false;
         
         if (!initialized) {
@@ -949,13 +1290,9 @@ public:
             initialized = true;
         }
 
-        g.seed = seed;
-        g.dim = DIM_OVERWORLD;
-        applySeed(&g, DIM_OVERWORLD, seed);
-
-        // Use a more efficient region search pattern
+        int32_t seed32 = (int32_t)(seed & 0xFFFFFFFF);
         int regionRadius = (radius / 512) + 1;
-        const int regionStep = 1;  // Can be increased for faster but less thorough search
+        const int regionStep = 1;
 
         for (int regionX = -regionRadius; regionX <= regionRadius; regionX += regionStep) {
             for (int regionZ = -regionRadius; regionZ <= regionRadius; regionZ += regionStep) {
@@ -965,28 +1302,18 @@ public:
                 }
 
                 Pos p;
-                if (!getBedrockStructurePos(selectedStructure, g.mc, seed, regionX, regionZ, &p)) {
+                if (!getBedrockStructurePos(selectedStructure, g.mc, seed32, regionX, regionZ, &p)) {
                     continue;
                 }
 
-                // Quick radius check before more expensive operations
                 if (!isWithinRadius(p, radius)) {
                     continue;
                 }
 
-                // Batch biome checks for better cache utilization
-                int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
-                
-                // Quick biome validation before structure checks
-                bool validBiome = true;
-                if (selectedStructure == Monument && !isDeepOcean(biomeId)) validBiome = false;
-                else if (selectedStructure == Mansion && biomeId != dark_forest) validBiome = false;
-                else if (selectedStructure == Shipwreck && !isShipwreckBiome(biomeId)) validBiome = false;
-                else if (selectedStructure == Village && !isVillageBiome(biomeId)) validBiome = false;
+                g.seed = seed;
+                g.dim = DIM_OVERWORLD;
+                applySeed(&g, DIM_OVERWORLD, seed);
 
-                if (!validBiome) continue;
-
-                // Structure validation after biome check passes
                 if (!isViableStructurePos(selectedStructure, &g, p.x, p.z, 0)) {
                     continue;
                 }
@@ -995,7 +1322,18 @@ public:
                     continue;
                 }
 
-                // Additional biome checks only if necessary
+                int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
+                if(biomeId == none) continue;
+
+                bool validBiome = true;
+                if (selectedStructure == Monument && !isDeepOcean(biomeId)) validBiome = false;
+                else if (selectedStructure == Mansion && biomeId != dark_forest) validBiome = false;
+                else if (selectedStructure == Shipwreck && !isShipwreckBiome(biomeId)) validBiome = false;
+                else if (selectedStructure == Village && !isVillageBiome(biomeId)) validBiome = false;
+
+                if (!validBiome) continue;
+
+                // Additional biome checks
                 if (selectedStructure == Monument || 
                     selectedStructure == Mansion || 
                     selectedStructure == Shipwreck || 
@@ -1030,11 +1368,18 @@ public:
                 initialized = true;
             }
 
+            // Get the lowest 32 bits of the seed
+            int32_t seed32 = (int32_t)(seed & 0xFFFFFFFF);
+
+            // Keep track of found positions to avoid duplicates
+            std::vector<Pos> foundPositions;
+
             // First find the base structure
             selectedStructure = baseStructureType;  // Set to base structure type
             if (!findStructure(seed, basePos, searchRadius)) {
                 return false;
             }
+            foundPositions.push_back(*basePos);
 
             // Count enabled structures and reset found flags
             int enabledCount = 0;
@@ -1057,14 +1402,9 @@ public:
 
                 // Try to find the attached structure within its radius from the base structure
                 bool found = false;
-                
+
                 // Search in regions around the base structure
                 int regionRadius = (attached.maxDistance / 512) + 1;
-
-                // Prepare generator for this search
-                g.seed = seed;
-                g.dim = DIM_OVERWORLD;
-                applySeed(&g, DIM_OVERWORLD, seed);
 
                 try {
                     for (int regionX = -regionRadius; regionX <= regionRadius && !found; ++regionX) {
@@ -1072,7 +1412,8 @@ public:
                             if (shouldStop) return false;  // Check for stop signal
 
                             Pos p;
-                            if (!getBedrockStructurePos(attached.structureType, g.mc, seed, regionX, regionZ, &p)) {
+                            // First check with lower 32 bits
+                            if (!getBedrockStructurePos(attached.structureType, g.mc, seed32, regionX, regionZ, &p)) {
                                 continue;
                             }
 
@@ -1085,6 +1426,30 @@ public:
                                 continue;
                             }
 
+                            // Check if this position is too close to any already found structure
+                            bool tooClose = false;
+                            for (const Pos& foundPos : foundPositions) {
+                                int fdx = p.x - foundPos.x;
+                                int fdz = p.z - foundPos.z;
+                                int foundDistance = (int)sqrt(fdx*fdx + fdz*fdz);
+                                // If it's the same structure type, ensure minimum distance of 128 blocks
+                                if ((attached.structureType == baseStructureType || 
+                                    std::any_of(attachedStructures.begin(), attachedStructures.end(), 
+                                              [&](const AttachedStructure& other) { 
+                                                  return other.found && other.structureType == attached.structureType; 
+                                              })) && 
+                                    foundDistance < 128) {
+                                    tooClose = true;
+                                    break;
+                                }
+                            }
+                            if (tooClose) continue;
+
+                            // Only now initialize the generator since we have a potential match
+                            g.seed = seed;
+                            g.dim = DIM_OVERWORLD;
+                            applySeed(&g, DIM_OVERWORLD, seed);
+
                             // Basic validation first
                             if (!isViableStructurePos(attached.structureType, &g, p.x, p.z, 0)) {
                                 continue;
@@ -1092,7 +1457,7 @@ public:
 
                             // Skip terrain check for certain structures
                             bool skipTerrainCheck = (attached.structureType == Ancient_City || 
-                                                       attached.structureType == Monument);
+                                                  attached.structureType == Monument);
                             
                             if (!skipTerrainCheck && !isViableStructureTerrain(attached.structureType, &g, p.x, p.z)) {
                                 continue;
@@ -1124,15 +1489,14 @@ public:
                                 }
                             }
 
-                            if (!validBiome) {
-                                continue;
-                            }
+                            if (!validBiome) continue;
 
-                            // Structure found within radius
+                            // Structure found within radius and not too close to other structures
                             attached.foundPos = p;
                             attached.found = true;
-                            foundCount++; // Increment found count
+                            foundCount++;
                             found = true;
+                            foundPositions.push_back(p);
                         }
                     }
                 } catch (const std::exception& e) {
@@ -1218,6 +1582,9 @@ int main(int argc, char** argv) {
     // Create structure finder
     StructureFinder finder;
 
+    // Initialize custom colors
+    ApplyCustomColors();
+
     // Main loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -1231,6 +1598,13 @@ int main(int argc, char** argv) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        // Update colors with smooth transitions
+        UpdateColors();
+
+        // Set the clear color to match our background color
+        glClearColor(uiColors.background.x, uiColors.background.y, uiColors.background.z, uiColors.background.w);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         // Create a fullscreen window that fills the entire screen
         ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -1251,8 +1625,6 @@ int main(int argc, char** argv) {
         // Rendering
         ImGui::Render();
         glViewport(0, 0, display_w, display_h);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);  // Transparent background
-        glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);

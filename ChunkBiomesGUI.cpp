@@ -19,8 +19,8 @@
 #include <cmath>
 #include <limits>
 #include <Windows.h>
-#include <algorithm> // Include algorithm header
-#include "Brng.h" // Include Brng.h for MersenneTwister
+#include <algorithm>
+#include "Brng.h"
 
 // Function to show Windows Save File Dialog
 std::string ShowSaveFileDialog() {

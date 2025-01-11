@@ -2,7 +2,8 @@
 
 This is a graphical user interface (GUI) version of [Chunkbiomes](https://github.com/Nel-S/Chunkbiomes), which ports certain filters from [Chunkbase](https://chunkbase.com/apps/seed-map) so features can be searched for across thousands of seeds every second. Currently this tool supports Windows platforms and is designed for *Minecraft: Bedrock Edition*, for helping users find seeds with specific Minecraft structures.
 
-![Screenshot_2505](https://github.com/user-attachments/assets/e2f93f74-59a6-46cd-8ce4-c9ed8687c18c)
+
+![Screenshot_2618](https://github.com/user-attachments/assets/b9e0f123-6cef-4b52-820d-f83820f9f60c)
 
 
 ## Features:
@@ -41,18 +42,19 @@ This tool relies on Dear ImGUI, GLFW, and [the Cubiomes library](https://github.
 1. Clone or download the repository to your local machine.
 2. Navigate to the project's main directory.
 3. In the main directory, you’ll find a file named `build.bat`. Simply run this batch file to start the build process.
-4. Once the process is complete, the executable (`.exe`) file will be located in the `build/bin` directory.
+4. Once the process is complete, the executable (`.exe`) file will be located in the `build` directory.
 
 
 ---
 ## Screenshots
-Screenshots of BetaV2:
+Screenshots of BetaV3:
 
-![Screenshot_2509](https://github.com/user-attachments/assets/75c6aef2-301c-4878-afb4-82d2538e0bbc)
-![Screenshot_2508](https://github.com/user-attachments/assets/343a20f4-4ed8-4c02-8f9d-f5f1a080c5ea)
-![Screenshot_2507](https://github.com/user-attachments/assets/25ccf9fe-781b-4e9b-8cb5-63919d97425e)
-![Screenshot_2506](https://github.com/user-attachments/assets/a647d865-5c0c-4960-b242-4fa61e95b75f)
-![Screenshot_2510](https://github.com/user-attachments/assets/b97bf82f-5357-4b52-9456-56e364dd2eb9)
+![Screenshot_2622](https://github.com/user-attachments/assets/a6714ac3-17ae-481e-8b6f-8f0a559a60d2)
+![Screenshot_2621](https://github.com/user-attachments/assets/69d654d3-edb7-4b43-a1c4-e632a688e395)
+![Screenshot_2620](https://github.com/user-attachments/assets/0b869c30-33ed-44eb-a674-e3b2cc521e76)
+![Screenshot_2619](https://github.com/user-attachments/assets/8b66a1d5-7a27-4c8d-84d6-e5669d85a7e9)
+![Screenshot_2623](https://github.com/user-attachments/assets/736bbdee-68fa-42d9-9fc8-bac332732fc5)
+
 
 ---
 

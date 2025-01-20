@@ -1585,14 +1585,13 @@ public:
 
             int32_t seed32 = (int32_t)(seed & 0xFFFFFFFF);
             int regionRadius = (radius / 512) + 1;
-            std::vector<Pos> validPositions;
 
-            // Initialize generator once
-            g.seed = seed;
-            g.dim = DIM_OVERWORLD;
-            applySeed(&g, DIM_OVERWORLD, seed);
+            // Early structure position check before applying seed
+            bool foundValidPosition = false;
+            Pos bestPos;
+            int bestDistance = INT_MAX;
 
-            for (int regionX = -regionRadius; regionX <= regionRadius; ++regionX) {
+            for (int regionX = -regionRadius; regionX <= regionRadius && !foundValidPosition; ++regionX) {
                 for (int regionZ = -regionRadius; regionZ <= regionRadius; ++regionZ) {
                     if (shouldStop) return false;
 
@@ -1607,68 +1606,67 @@ public:
                         continue;
                     }
 
-                    // Basic validation
-                    if (!isViableStructurePos(selectedStructure, &g, p.x, p.z, 0)) {
-                        continue;
-                    }
-
-                    bool skipTerrainCheck = (selectedStructure == Ancient_City || 
-                                          selectedStructure == Monument);
-                    
-                    if (!skipTerrainCheck && !isViableStructureTerrain(selectedStructure, &g, p.x, p.z)) {
-                        continue;
-                    }
-
-                    int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
-                    if(biomeId == none) continue;
-                    
-                    bool validBiome = true;
-                    if (selectedStructure == Monument) {
-                        if (!isDeepOcean(biomeId)) {
-                            validBiome = false;
-                        }
-                    }
-                    else if (selectedStructure == Mansion) {
-                        if (biomeId != dark_forest) {
-                            validBiome = false;
-                        }
-                    }
-                    else if (selectedStructure == Shipwreck) {
-                        if (!isShipwreckBiome(biomeId)) {
-                            validBiome = false;
-                        }
-                    }
-                    else if (selectedStructure == Village) {
-                        if (!isVillageBiome(biomeId)) {
-                            validBiome = false;
-                        }
-                    }
-
-                    if (!validBiome) continue;
-
-                    // Add valid position
-                    validPositions.push_back(p);
-                }
-            }
-
-            // Find closest valid position
-            if (!validPositions.empty()) {
-                Pos bestPos = validPositions[0];
-                int bestDistance = INT_MAX;
-
-                for (const Pos& p : validPositions) {
-                    int distance = (int)sqrt(p.x*p.x + p.z*p.z);
+                    // Store potential position if it's closer than current best
                     if (distance < bestDistance) {
                         bestDistance = distance;
                         bestPos = p;
+                        foundValidPosition = true;
                     }
                 }
-
-                *pos = bestPos;
-                return true;
             }
 
-            return false;
+            // If no valid position found in the preliminary check, skip this seed
+            if (!foundValidPosition) {
+                return false;
+            }
+
+            // Only initialize generator and apply seed if we found a potential position
+            g.seed = seed;
+            g.dim = DIM_OVERWORLD;
+            applySeed(&g, DIM_OVERWORLD, seed);
+
+            // Validate the best position found
+            if (!isViableStructurePos(selectedStructure, &g, bestPos.x, bestPos.z, 0)) {
+                return false;
+            }
+
+            bool skipTerrainCheck = (selectedStructure == Ancient_City || 
+                                   selectedStructure == Monument);
+            
+            if (!skipTerrainCheck && !isViableStructureTerrain(selectedStructure, &g, bestPos.x, bestPos.z)) {
+                return false;
+            }
+
+            int biomeId = getBiomeAt(&g, 4, bestPos.x >> 2, 319>>2, bestPos.z >> 2);
+            if(biomeId == none) return false;
+            
+            bool validBiome = true;
+            if (selectedStructure == Monument) {
+                if (!isDeepOcean(biomeId)) {
+                    validBiome = false;
+                }
+            }
+            else if (selectedStructure == Mansion) {
+                if (biomeId != dark_forest) {
+                    validBiome = false;
+                }
+            }
+            else if (selectedStructure == Shipwreck) {
+                if (!isShipwreckBiome(biomeId)) {
+                    validBiome = false;
+                }
+            }
+            else if (selectedStructure == Village) {
+                if (!isVillageBiome(biomeId)) {
+                    validBiome = false;
+                }
+            }
+
+            if (!validBiome) return false;
+
+            *pos = bestPos;
+            return true;
+
         } catch (const std::exception& e) {
             return false;
         }

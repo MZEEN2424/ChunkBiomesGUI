@@ -4,44 +4,48 @@
 #include "cubiomes/finders.h"
 #include "Brng.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 bool getBedrockStructureConfig(const int structureType, const int mc, StructureConfig *sconf);
 
 static inline ATTR(const)
 Pos getBedrockFeatureChunkInRegion(const StructureConfig *config, uint64_t seed, int regX, int regZ) {
-	MersenneTwister mt;
-	mSetSeed(&mt, regX*UINT64_C(341873128712) + regZ*UINT64_C(132897987541) + seed + config->salt, 2);
-	Pos pos;
-	pos.x = mNextInt(&mt, config->chunkRange);
-	pos.z = mNextInt(&mt, config->chunkRange);
-	return pos;
+    MersenneTwister mt;
+    mSetSeed(&mt, regX*UINT64_C(341873128712) + regZ*UINT64_C(132897987541) + seed + config->salt, 2);
+    Pos pos;
+    pos.x = mNextInt(&mt, config->chunkRange);
+    pos.z = mNextInt(&mt, config->chunkRange);
+    return pos;
 }
 
 static inline ATTR(const)
 Pos getBedrockFeaturePos(const StructureConfig *config, uint64_t seed, int regX, int regZ) {
-	Pos pos = getBedrockFeatureChunkInRegion(config, seed, regX, regZ);
-	// Bedrock features are offset by +8.
-	pos.x = (((uint64_t)regX*config->regionSize + pos.x) << 4) + 8;
-	pos.z = (((uint64_t)regZ*config->regionSize + pos.z) << 4) + 8;
-	return pos;
+    Pos pos = getBedrockFeatureChunkInRegion(config, seed, regX, regZ);
+    // Bedrock features are offset by +8.
+    pos.x = (((uint64_t)regX*config->regionSize + pos.x) << 4) + 8;
+    pos.z = (((uint64_t)regZ*config->regionSize + pos.z) << 4) + 8;
+    return pos;
 }
 
 static inline ATTR(const)
 Pos getBedrockLargeStructureChunkInRegion(const StructureConfig *config, uint64_t seed, int regX, int regZ) {
-	MersenneTwister mt;
-	mSetSeed(&mt, regX*UINT64_C(341873128712) + regZ*UINT64_C(132897987541) + seed + config->salt, 4);
-	Pos pos;
-	pos.x = (mNextInt(&mt, config->chunkRange) + mNextInt(&mt, config->chunkRange))/2;
-	pos.z = (mNextInt(&mt, config->chunkRange) + mNextInt(&mt, config->chunkRange))/2;
-	return pos;
+    MersenneTwister mt;
+    mSetSeed(&mt, regX*UINT64_C(341873128712) + regZ*UINT64_C(132897987541) + seed + config->salt, 4);
+    Pos pos;
+    pos.x = (mNextInt(&mt, config->chunkRange) + mNextInt(&mt, config->chunkRange))/2;
+    pos.z = (mNextInt(&mt, config->chunkRange) + mNextInt(&mt, config->chunkRange))/2;
+    return pos;
 }
 
 static inline ATTR(const)
 Pos getBedrockLargeStructurePos(const StructureConfig *config, uint64_t seed, int regX, int regZ) {
-	Pos pos = getBedrockLargeStructureChunkInRegion(config, seed, regX, regZ);
-	// Bedrock features are offset by +8.
-	pos.x = (((uint64_t)regX*config->regionSize + pos.x) << 4) + 8;
-	pos.z = (((uint64_t)regZ*config->regionSize + pos.z) << 4) + 8;
-	return pos;
+    Pos pos = getBedrockLargeStructureChunkInRegion(config, seed, regX, regZ);
+    // Bedrock features are offset by +8.
+    pos.x = (((uint64_t)regX*config->regionSize + pos.x) << 4) + 8;
+    pos.z = (((uint64_t)regZ*config->regionSize + pos.z) << 4) + 8;
+    return pos;
 }
 
 bool getBedrockStructurePos(int structureType, int mc, uint64_t seed, int regX, int regZ, Pos *pos);
@@ -55,9 +59,13 @@ int getRavinePos(int mc, uint64_t seed, int x, int z, const Generator *g, Struct
 /* Returns if a ravine was found.
    If not NULL, the position and size of the ravine, and whether it is giant, are stored in `ravine`.*/
 // Needs fixing
-// bool getBedrockRavinePos(uint64_t seed, int x, int z, StructureVariant *ravine);
+bool getBedrockRavinePos(uint64_t seed, int x, int z, StructureVariant *ravine);
 
 /* Returns the number of potential strongholds for a given seed */
 int getBedrockStronghold(uint64_t seed);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif // __BFINDERS_H

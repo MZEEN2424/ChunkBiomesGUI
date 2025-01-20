@@ -1,26 +1,165 @@
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 #include <stdio.h>
-#include <GLFW/glfw3.h>
-#include <vector>
-#include <string>
+#include <iostream>
 #include <thread>
+#define GL_SILENCE_DEPRECATION
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+#include <GLES2/gl2.h>
+#endif
+#include <GLFW/glfw3.h>
+#include <Windows.h>
+#include <filesystem>
+#include <vector>
+#include <fstream>
 #include <atomic>
 #include <mutex>
-#include <set>
+#include <queue>
+#include <condition_variable>
 #include <random>
-#include <chrono>
-#include <format>
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <cstring>
-#include <cmath>
-#include <limits>
-#include <Windows.h>
+#include <set>
+#include <map>
+#include <unordered_map>
 #include <algorithm>
 #include "Brng.h"
+
+// Global variables
+static int OPTIMAL_BATCH_SIZE = 200000;
+static int generatorPoolSize = 64;
+static float transitionSpeed = 0.1f;
+
+// Forward declarations
+bool LoadUIColors(const char* filename);
+
+std::string GetExePath() {
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(NULL, buffer, MAX_PATH);
+    std::string::size_type pos = std::string(buffer).find_last_of("\\/");
+    return std::string(buffer).substr(0, pos);
+}
+
+struct ThemeFile {
+    std::string name;
+    std::string path;
+};
+
+std::vector<ThemeFile> GetThemeFiles() {
+    std::vector<ThemeFile> themes;
+    std::string themesPath = GetExePath() + "\\themes";
+    
+    printf("Looking for themes in: %s\n", themesPath.c_str());
+    
+    if (!std::filesystem::exists(themesPath)) {
+        printf("Themes directory not found! Creating it...\n");
+        std::filesystem::create_directory(themesPath);
+        return themes;
+    }
+    
+    printf("Themes directory found, scanning for .txt files...\n");
+    
+    for (const auto& entry : std::filesystem::directory_iterator(themesPath)) {
+        printf("Found file: %s\n", entry.path().string().c_str());
+        if (entry.path().extension() == ".txt") {
+            ThemeFile theme;
+            theme.name = entry.path().filename().string();
+            theme.path = entry.path().string();
+            themes.push_back(theme);
+            printf("Added theme: %s\n", theme.name.c_str());
+        }
+    }
+    
+    printf("Found %zu themes total\n", themes.size());
+    return themes;
+}
+
+struct AppSettings {
+    // Performance Settings
+    int batchSize = 200000;
+    int generatorPoolSize = 64;
+    int threadCount = 1;
+    
+    // UI Settings
+    float guiScale = 1.0f;
+    std::string autoLoadColorFile = "";
+    bool autoLoadColors = false;
+
+    void saveToFile(const char* filename) {
+        FILE* f = fopen(filename, "w");
+        if (f) {
+            fprintf(f, "[Performance]\n");
+            fprintf(f, "batchSize=%d\n", batchSize);
+            fprintf(f, "generatorPoolSize=%d\n", generatorPoolSize);
+            fprintf(f, "threadCount=%d\n", threadCount);
+            
+            fprintf(f, "\n[UI]\n");
+            fprintf(f, "guiScale=%f\n", guiScale);
+            fprintf(f, "autoLoadColors=%d\n", autoLoadColors ? 1 : 0);
+            fprintf(f, "autoLoadColorFile=%s\n", autoLoadColorFile.c_str());
+            fclose(f);
+        }
+    }
+    
+    bool loadFromFile(const char* filename) {
+        FILE* f = fopen(filename, "r");
+        if (!f) {
+            // Create default settings if file doesn't exist
+            batchSize = 200000;
+            generatorPoolSize = 64;
+            threadCount = std::max(1, static_cast<int>(std::thread::hardware_concurrency()));
+            guiScale = 1.0f;
+            autoLoadColorFile = "";
+            autoLoadColors = false;
+            saveToFile(filename);
+            return true;
+        }
+
+        char line[1024];
+        char section[64] = "";
+
+        while (fgets(line, sizeof(line), f)) {
+            // Remove newline
+            char* newline = strchr(line, '\n');
+            if (newline) *newline = 0;
+
+            // Skip empty lines
+            if (line[0] == 0) continue;
+
+            // Parse section
+            if (line[0] == '[') {
+                char* end = strchr(line, ']');
+                if (end) {
+                    *end = 0;
+                    strcpy(section, line + 1);
+                }
+                continue;
+            }
+
+            // Parse key=value
+            char* equals = strchr(line, '=');
+            if (!equals) continue;
+            *equals = 0;
+            const char* key = line;
+            const char* value = equals + 1;
+
+            if (strcmp(section, "Performance") == 0) {
+                if (strcmp(key, "batchSize") == 0) batchSize = atoi(value);
+                else if (strcmp(key, "generatorPoolSize") == 0) generatorPoolSize = atoi(value);
+                else if (strcmp(key, "threadCount") == 0) threadCount = atoi(value);
+            }
+            else if (strcmp(section, "UI") == 0) {
+                if (strcmp(key, "guiScale") == 0) guiScale = (float)atof(value);
+                else if (strcmp(key, "autoLoadColors") == 0) autoLoadColors = atoi(value) != 0;
+                else if (strcmp(key, "autoLoadColorFile") == 0) autoLoadColorFile = value;
+            }
+        }
+
+        fclose(f);
+        return true;
+    }
+};
+
+static AppSettings appSettings;
 
 // Function to show Windows Save File Dialog
 std::string ShowSaveFileDialog() {
@@ -72,11 +211,9 @@ std::string ShowOpenFileDialog() {
     return "";
 }
 
-extern "C" {
 #include "cubiomes/generator.h"
 #include "cubiomes/finders.h"
 #include "Bfinders.h"
-}
 
 // Forward declare ApplyCustomColors
 void ApplyCustomColors();
@@ -99,9 +236,6 @@ struct UIColors {
     ImVec4 targetBorder = border;
     ImVec4 targetAccent = accent;
 } uiColors;
-
-// Global transition speed
-static float transitionSpeed = 0.1f;
 
 // Helper function to smoothly interpolate between colors
 ImVec4 LerpColor(const ImVec4& current, const ImVec4& target, float t) {
@@ -188,59 +322,139 @@ void SaveUIColors(const char* filename) {
     if (file.is_open()) {
         // Save each color component with precision
         file << std::fixed << std::setprecision(6);
-        file << uiColors.text.x << " " << uiColors.text.y << " " << uiColors.text.z << " " << uiColors.text.w << "\n";
-        file << uiColors.background.x << " " << uiColors.background.y << " " << uiColors.background.z << " " << uiColors.background.w << "\n";
-        file << uiColors.frame.x << " " << uiColors.frame.y << " " << uiColors.frame.z << " " << uiColors.frame.w << "\n";
-        file << uiColors.button.x << " " << uiColors.button.y << " " << uiColors.button.z << " " << uiColors.button.w << "\n";
-        file << uiColors.header.x << " " << uiColors.header.y << " " << uiColors.header.z << " " << uiColors.header.w << "\n";
-        file << uiColors.border.x << " " << uiColors.border.y << " " << uiColors.border.z << " " << uiColors.border.w << "\n";
-        file << uiColors.accent.x << " " << uiColors.accent.y << " " << uiColors.accent.z << " " << uiColors.accent.w << "\n";
+        file << "; Theme file for ChunkBiomesGUI\n";
+        file << "; Format: name=r,g,b,a (values from 0.0 to 1.0)\n\n";
+        
+        file << "text=" << uiColors.text.x << "," << uiColors.text.y << "," << uiColors.text.z << "," << uiColors.text.w << "\n";
+        file << "background=" << uiColors.background.x << "," << uiColors.background.y << "," << uiColors.background.z << "," << uiColors.background.w << "\n";
+        file << "frame=" << uiColors.frame.x << "," << uiColors.frame.y << "," << uiColors.frame.z << "," << uiColors.frame.w << "\n";
+        file << "button=" << uiColors.button.x << "," << uiColors.button.y << "," << uiColors.button.z << "," << uiColors.button.w << "\n";
+        file << "header=" << uiColors.header.x << "," << uiColors.header.y << "," << uiColors.header.z << "," << uiColors.header.w << "\n";
+        file << "border=" << uiColors.border.x << "," << uiColors.border.y << "," << uiColors.border.z << "," << uiColors.border.w << "\n";
+        file << "accent=" << uiColors.accent.x << "," << uiColors.accent.y << "," << uiColors.accent.z << "," << uiColors.accent.w << "\n";
         file.close();
+        printf("Theme saved successfully!\n");
     }
 }
 
 // Function to load UI colors from a file
 bool LoadUIColors(const char* filename) {
+    printf("Loading theme from: %s\n", filename);
     std::ifstream file(filename);
-    if (!file.is_open()) return false;
+    if (!file.is_open()) {
+        printf("Failed to open theme file!\n");
+        return false;
+    }
 
-    try {
+    UIColors newColors = uiColors;  // Create a temporary copy
+    bool foundAnyColor = false;
+    std::string line;
+    
+    while (std::getline(file, line)) {
+        // Skip empty lines and comments
+        if (line.empty() || line[0] == ';') continue;
+        
+        // Parse key=value
+        size_t pos = line.find('=');
+        if (pos == std::string::npos) continue;
+        
+        std::string key = line.substr(0, pos);
+        std::string value = line.substr(pos + 1);
+        
         float r, g, b, a;
-        UIColors newColors = uiColors;  // Create a temporary copy
+        if (sscanf(value.c_str(), "%f,%f,%f,%f", &r, &g, &b, &a) == 4) {
+            ImVec4 color(r, g, b, a);
+            printf("Found color: %s = %.2f, %.2f, %.2f, %.2f\n", key.c_str(), r, g, b, a);
+            foundAnyColor = true;
+            
+            if (key == "text") newColors.text = color;
+            else if (key == "background") newColors.background = color;
+            else if (key == "frame") newColors.frame = color;
+            else if (key == "button") newColors.button = color;
+            else if (key == "header") newColors.header = color;
+            else if (key == "border") newColors.border = color;
+            else if (key == "accent") newColors.accent = color;
+            else {
+                printf("Unknown color key: %s\n", key.c_str());
+            }
+        }
+    }
+    
+    file.close();
+    
+    if (foundAnyColor) {
+        // Update both current and target colors for smooth transition
+        uiColors.targetText = newColors.text;
+        uiColors.targetBackground = newColors.background;
+        uiColors.targetFrame = newColors.frame;
+        uiColors.targetButton = newColors.button;
+        uiColors.targetHeader = newColors.header;
+        uiColors.targetBorder = newColors.border;
+        uiColors.targetAccent = newColors.accent;
         
-        // Load text color
-        if (file >> r >> g >> b >> a) newColors.text = ImVec4(r, g, b, a);
-        // Load background color
-        if (file >> r >> g >> b >> a) newColors.background = ImVec4(r, g, b, a);
-        // Load frame color
-        if (file >> r >> g >> b >> a) newColors.frame = ImVec4(r, g, b, a);
-        // Load button color
-        if (file >> r >> g >> b >> a) newColors.button = ImVec4(r, g, b, a);
-        // Load header color
-        if (file >> r >> g >> b >> a) newColors.header = ImVec4(r, g, b, a);
-        // Load border color
-        if (file >> r >> g >> b >> a) newColors.border = ImVec4(r, g, b, a);
-        // Load accent color
-        if (file >> r >> g >> b >> a) newColors.accent = ImVec4(r, g, b, a);
-
-        file.close();
-        
-        // Update both current and target colors
-        uiColors = newColors;
-        uiColors.targetText = uiColors.text;
-        uiColors.targetBackground = uiColors.background;
-        uiColors.targetFrame = uiColors.frame;
-        uiColors.targetButton = uiColors.button;
-        uiColors.targetHeader = uiColors.header;
-        uiColors.targetBorder = uiColors.border;
-        uiColors.targetAccent = uiColors.accent;
-        
-        ApplyCustomColors();
+        printf("Theme loaded successfully!\n");
         return true;
     }
-    catch (...) {
-        file.close();
-        return false;
+    
+    printf("No valid colors found in theme file!\n");
+    return false;
+}
+
+bool showThemeSelector = false;
+std::vector<ThemeFile> availableThemes;
+
+void ShowThemeSelector() {
+    if (!showThemeSelector) return;
+
+    // Center the window
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    
+    // Make it a popup modal instead of a regular window
+    ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
+    bool open = true;
+    if (ImGui::BeginPopupModal("Theme Selector", &open, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextColored(ImVec4(1,1,0,1), "Available Themes: %zu", availableThemes.size());
+        ImGui::Separator();
+
+        static int selectedTheme = -1;
+        ImGui::BeginChild("ThemesList", ImVec2(0, 200), true);
+        for (int i = 0; i < availableThemes.size(); i++) {
+            if (ImGui::Selectable(availableThemes[i].name.c_str(), selectedTheme == i)) {
+                selectedTheme = i;
+                printf("Selected theme: %s\n", availableThemes[i].name.c_str());
+            }
+        }
+        ImGui::EndChild();
+
+        ImGui::Separator();
+        
+        ImGui::BeginDisabled(selectedTheme == -1);
+        if (ImGui::Button("Load Theme", ImVec2(120, 0))) {
+            if (selectedTheme >= 0 && selectedTheme < availableThemes.size()) {
+                printf("Loading theme: %s\n", availableThemes[selectedTheme].path.c_str());
+                if (LoadUIColors(availableThemes[selectedTheme].path.c_str())) {
+                    appSettings.autoLoadColorFile = availableThemes[selectedTheme].path;
+                    appSettings.autoLoadColors = true;
+                    appSettings.saveToFile("settings.ini");
+                    printf("Theme loaded and saved to settings\n");
+                    ImGui::CloseCurrentPopup();
+                    showThemeSelector = false;
+                } else {
+                    printf("Failed to load theme!\n");
+                }
+            }
+        }
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            showThemeSelector = false;
+            printf("Theme selection cancelled\n");
+        }
+
+        ImGui::EndPopup();
     }
 }
 
@@ -255,7 +469,7 @@ private:
     std::random_device rd;
     std::mt19937_64 gen;
     std::uniform_int_distribution<uint64_t> dis;
-    const int numThreads = std::max(1, (int)std::thread::hardware_concurrency());
+    const int numThreads = appSettings.threadCount;  // Use appSettings.threadCount instead of hardware_concurrency
 
     // Make sure Generator is thread-safe
     // Generator g;
@@ -272,7 +486,8 @@ private:
     std::mutex structuresMutex;
     std::vector<int64_t> foundSeeds;
     int selectedStructure = Village;
-    int searchRadius = 256;
+    int maxSearchRadius = 256;  // Changed from 2000 to 256
+    int minSearchRadius = 0;    // Add min search radius
 
     // Add these to track search performance
     std::chrono::steady_clock::time_point searchStartTime;
@@ -294,16 +509,17 @@ private:
     // New structure for multiple structure search
     struct AttachedStructure {
         int structureType;
+        int minDistance;  // Restore minDistance
         int maxDistance;
         bool required;
         bool found;
         Pos foundPos;
 
         AttachedStructure() : 
-            structureType(Village), maxDistance(256), required(false), found(false), foundPos({0, 0}) {}
+            structureType(Village), minDistance(0), maxDistance(256), required(false), found(false), foundPos({0, 0}) {}
         
-        AttachedStructure(int type, int dist, bool req) : 
-            structureType(type), maxDistance(dist), required(req), found(false), foundPos({0, 0}) {}
+        AttachedStructure(int type, int minDist, int maxDist, bool req) : 
+            structureType(type), minDistance(minDist), maxDistance(maxDist), required(req), found(false), foundPos({0, 0}) {}
     };
     
     bool multiStructureMode = false;
@@ -406,7 +622,7 @@ public:
             searchThreads.clear();
             
             // Pre-generate seed batches for each thread
-            std::vector<std::vector<int64_t>> threadSeeds(numThreads);
+            std::vector<std::vector<int64_t>> threadSeeds(appSettings.threadCount);
             std::mt19937_64 globalGen(rd());
             std::uniform_int_distribution<int64_t> dist;
             
@@ -417,7 +633,7 @@ public:
             }
 
             // Pre-generate seeds for each thread
-            for (int i = 0; i < numThreads; i++) {
+            for (int i = 0; i < appSettings.threadCount; i++) {
                 threadSeeds[i].reserve(OPTIMAL_BATCH_SIZE);
                 for (int j = 0; j < OPTIMAL_BATCH_SIZE; j++) {
                     threadSeeds[i].push_back(dist(globalGen));
@@ -425,7 +641,7 @@ public:
             }
             
             // Create threads with pre-generated seeds
-            for (int i = 0; i < numThreads; i++) {
+            for (int i = 0; i < appSettings.threadCount; i++) {
                 searchThreads.emplace_back([this, i, seedBatch = std::move(threadSeeds[i])]() {
                     try {
                         std::mt19937_64 localGen(rd() + i);
@@ -460,7 +676,7 @@ public:
                                 if (multiStructureMode) {
                                     found = findMultipleStructures(seedToCheck, &pos);
                                 } else {
-                                    found = findStructure(seedToCheck, &pos, searchRadius);
+                                    found = findStructure(seedToCheck, &pos, maxSearchRadius);
                                 }
                             } catch (const std::exception& e) {
                                 continue;
@@ -641,7 +857,7 @@ public:
 
         // Version and License
         ImGui::Separator();
-        ImGui::Text("Version: BetaV3");
+        ImGui::Text("Version: BetaV4");
         ImGui::TextWrapped(
             "License Information:\n"
             "- Core functionality and algorithms: Rights reserved by Chunkbase\n"
@@ -706,7 +922,7 @@ public:
                 // Write header
                 outFile << "Chunk Biomes - Found Seeds\n";
                 outFile << "Structure: " << struct2str(selectedStructure) << "\n";
-                outFile << "Search Radius: " << searchRadius << "\n";
+                outFile << "Search Radius: " << maxSearchRadius << "\n";
                 outFile << "------------------------\n";
 
                 // Write seeds with their structure details
@@ -746,8 +962,8 @@ public:
         if (ImGui::RadioButton("Multiple", multiStructureMode)) {
             multiStructureMode = true;
             if (attachedStructures.empty()) {
-                // Initialize with some default attached structures
-                attachedStructures.resize(3, AttachedStructure());
+                // Initialize with empty vector
+                attachedStructures.clear();
             }
         }
 
@@ -821,12 +1037,16 @@ public:
             ImGui::Text("Attached Structures:");
             ImGui::Separator();
 
-            // Table for attached structures
+            // Table for attached structures with background color matching the UI
+            ImGui::PushStyleColor(ImGuiCol_TableHeaderBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+            ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+            ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+
             if (ImGui::BeginTable("AttachedStructures", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
-                ImGui::TableSetupColumn("Enable");
-                ImGui::TableSetupColumn("Structure Type");
-                ImGui::TableSetupColumn("Distance");
-                ImGui::TableSetupColumn("Status");
+                ImGui::TableSetupColumn("Enable", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+                ImGui::TableSetupColumn("Structure Type", ImGuiTableColumnFlags_WidthFixed, 120.0f);
+                ImGui::TableSetupColumn("Min Distance", ImGuiTableColumnFlags_WidthFixed, 160.0f);
+                ImGui::TableSetupColumn("Max Distance", ImGuiTableColumnFlags_WidthFixed, 160.0f);
                 ImGui::TableHeadersRow();
 
                 for (size_t i = 0; i < attachedStructures.size(); i++) {
@@ -834,44 +1054,45 @@ public:
                     
                     // Enable checkbox
                     ImGui::TableNextColumn();
-                    bool enabled = attachedStructures[i].required;
-                    if (ImGui::Checkbox(("##enable" + std::to_string(i)).c_str(), &enabled)) {
-                        attachedStructures[i].required = enabled;
-                    }
+                    ImGui::Checkbox(("##required" + std::to_string(i)).c_str(), &attachedStructures[i].required);
 
-                    // Structure type selection
+                    // Structure type combo
                     ImGui::TableNextColumn();
                     int structIndex = getIndexFromStructureType(attachedStructures[i].structureType);
                     if (ImGui::Combo(("##type" + std::to_string(i)).c_str(), &structIndex, structures, IM_ARRAYSIZE(structures))) {
                         attachedStructures[i].structureType = getStructureTypeFromIndex(structIndex);
                     }
 
-                    // Distance input
+                    // Min distance column
                     ImGui::TableNextColumn();
-                    int radius = attachedStructures[i].maxDistance;
-                    if (ImGui::InputInt(("##radius" + std::to_string(i)).c_str(), &radius, 16, 100)) {
-                        if (radius < 16) radius = 16;
-                        if (radius > 10000) radius = 10000;
-                        attachedStructures[i].maxDistance = radius;
+                    ImGui::SetNextItemWidth(60);
+                    ImGui::DragInt(("##mindist" + std::to_string(i)).c_str(), &attachedStructures[i].minDistance, 1.0f, 0, attachedStructures[i].maxDistance);
+                    ImGui::SameLine();
+                    if (ImGui::Button(("-##mind" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
+                        attachedStructures[i].minDistance = std::max(0, attachedStructures[i].minDistance - 16);
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button(("+##mind" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
+                        attachedStructures[i].minDistance = std::min(attachedStructures[i].maxDistance, attachedStructures[i].minDistance + 16);
                     }
 
-                    // Status column
+                    // Max distance column
                     ImGui::TableNextColumn();
-                    if (attachedStructures[i].found) {
-                        ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Found!");
-                        if (ImGui::IsItemHovered()) {
-                            ImGui::BeginTooltip();
-                            ImGui::Text("X: %d, Z: %d", attachedStructures[i].foundPos.x, attachedStructures[i].foundPos.z);
-                            ImGui::EndTooltip();
-                        }
-                    } else if (isSearching) {
-                        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Searching...");
-                    } else {
-                        ImGui::TextDisabled("-");
+                    ImGui::SetNextItemWidth(60);
+                    ImGui::DragInt(("##maxdist" + std::to_string(i)).c_str(), &attachedStructures[i].maxDistance, 1.0f, attachedStructures[i].minDistance, 10000);
+                    ImGui::SameLine();
+                    if (ImGui::Button(("-##maxd" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
+                        attachedStructures[i].maxDistance = std::max(attachedStructures[i].minDistance, attachedStructures[i].maxDistance - 16);
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button(("+##maxd" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
+                        attachedStructures[i].maxDistance = std::min(10000, attachedStructures[i].maxDistance + 16);
                     }
                 }
                 ImGui::EndTable();
             }
+            
+            ImGui::PopStyleColor(3);
 
             if (ImGui::Button("Add Structure")) {
                 if (attachedStructures.size() < 5) { // Limit to 5 attached structures
@@ -888,9 +1109,39 @@ public:
 
         // Rest of the original UI (radius, continuous search, etc.)
         ImGui::PushItemWidth(120);
-        ImGui::InputInt("Search Radius", &searchRadius, 16, 100);
-        if (searchRadius < 16) searchRadius = 16;
-        if (searchRadius > 10000) searchRadius = 10000;
+        ImGui::Text("Search Radius:");
+        ImGui::SameLine();
+        ImGui::BeginGroup();
+        
+        // Min radius controls
+        ImGui::PushItemWidth(100);
+        ImGui::Text("Min:"); 
+        ImGui::SameLine();
+        ImGui::DragInt("##minradius", &minSearchRadius, 1.0f, 0, maxSearchRadius);
+        ImGui::SameLine();
+        if (ImGui::Button("-##minr", ImVec2(20, 0))) { 
+            minSearchRadius = std::max(0, minSearchRadius - 16); 
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("+##minr", ImVec2(20, 0))) { 
+            minSearchRadius = std::min(maxSearchRadius, minSearchRadius + 16); 
+        }
+        
+        // Max radius controls
+        ImGui::Text("Max:"); 
+        ImGui::SameLine();
+        ImGui::DragInt("##maxradius", &maxSearchRadius, 1.0f, minSearchRadius, 10000);
+        ImGui::SameLine();
+        if (ImGui::Button("-##maxr", ImVec2(20, 0))) { 
+            maxSearchRadius = std::max(minSearchRadius, maxSearchRadius - 16); 
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("+##maxr", ImVec2(20, 0))) { 
+            maxSearchRadius = std::min(10000, maxSearchRadius + 16); 
+        }
+        ImGui::PopItemWidth();
+        
+        ImGui::EndGroup();
         ImGui::PopItemWidth();
 
         // Continuous Search Checkbox
@@ -969,6 +1220,10 @@ public:
             }
 
             // Create a scrollable table for seeds
+            ImGui::PushStyleColor(ImGuiCol_TableHeaderBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+            ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+            ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+
             if (ImGui::BeginTable("SeedsTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | 
                                                   ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | 
                                                   ImGuiTableFlags_Reorderable, ImVec2(0, 300))) {
@@ -1062,80 +1317,117 @@ public:
                 
                 ImGui::EndTable();
             }
+            
+            ImGui::PopStyleColor(3);
         }
     }
 
     void renderSettingsTab() {
         if (ImGui::BeginTabItem("Settings")) {
-            ImGui::Text("Performance Settings");
-            ImGui::Separator();
-            
-            // Batch Size slider
-            int batchSize = OPTIMAL_BATCH_SIZE;
-            if (ImGui::SliderInt("Batch Size", &batchSize, 10000, 1000000, "%d", ImGuiSliderFlags_Logarithmic)) {
-                OPTIMAL_BATCH_SIZE = batchSize;
-            }
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Number of seeds to process in each batch\nHigher values = more memory usage but potentially faster");
-            }
-            
-            // Generator Pool Size slider
-            int poolSize = generatorPoolSize;
-            if (ImGui::SliderInt("Generator Pool Size", &poolSize, 1, 128)) {
-                generatorPoolSize = poolSize;
-            }
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Number of parallel generators\nRecommended: Set to number of CPU threads");
-            }
-            
-            // UI Color Settings
-            ImGui::Separator();
-            ImGui::Text("UI Colors");
-            bool colorChanged = false;
-            
-            ImGui::TextColored(uiColors.text, "Current Colors:");
-            colorChanged |= ImGui::ColorEdit3("Main Text", (float*)&uiColors.targetText);
-            colorChanged |= ImGui::ColorEdit3("Background", (float*)&uiColors.targetBackground);
-            colorChanged |= ImGui::ColorEdit3("Frame Background", (float*)&uiColors.targetFrame);
-            colorChanged |= ImGui::ColorEdit3("Interactive Elements", (float*)&uiColors.targetAccent);
-            colorChanged |= ImGui::ColorEdit3("Buttons & Tabs", (float*)&uiColors.targetButton);
-            colorChanged |= ImGui::ColorEdit3("Headers", (float*)&uiColors.targetHeader);
-            colorChanged |= ImGui::ColorEdit4("Border", (float*)&uiColors.targetBorder);
-
-            // Add transition speed slider
-            static float transitionSpeed = 0.1f;
-            ImGui::SliderFloat("Transition Speed", &transitionSpeed, 0.01f, 0.5f, "%.2f");
-
-            if (ImGui::Button("Reset Colors")) {
-                UIColors defaultColors;
-                uiColors.targetText = defaultColors.text;
-                uiColors.targetBackground = defaultColors.background;
-                uiColors.targetFrame = defaultColors.frame;
-                uiColors.targetButton = defaultColors.button;
-                uiColors.targetHeader = defaultColors.header;
-                uiColors.targetBorder = defaultColors.border;
-                uiColors.targetAccent = defaultColors.accent;
-            }
-
-            ImGui::Separator();
-            ImGui::Text("Save/Load UI Colors");
-            if (ImGui::Button("Save UI Colors")) {
-                std::string filename = ShowSaveFileDialog();
-                if (!filename.empty()) {
-                    SaveUIColors(filename.c_str());
+            // Performance Settings Category
+            if (ImGui::CollapsingHeader("Performance Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+                // Thread Count
+                int maxThreads = std::max(1, (int)std::thread::hardware_concurrency());
+                if (ImGui::SliderInt("Thread Count", &appSettings.threadCount, 1, maxThreads)) {
+                    appSettings.saveToFile("settings.ini");
                 }
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Load UI Colors")) {
-                std::string filename = ShowOpenFileDialog();
-                if (!filename.empty()) {
-                    LoadUIColors(filename.c_str());
-                    colorChanged = true;
+                
+                // Batch Size
+                if (ImGui::SliderInt("Batch Size", &appSettings.batchSize, 10000, 1000000, "%d", ImGuiSliderFlags_Logarithmic)) {
+                    OPTIMAL_BATCH_SIZE = appSettings.batchSize;
+                    appSettings.saveToFile("settings.ini");
+                }
+                
+                // Generator Pool Size
+                if (ImGui::SliderInt("Generator Pool Size", &appSettings.generatorPoolSize, 1, 128)) {
+                    generatorPoolSize = appSettings.generatorPoolSize;
+                    appSettings.saveToFile("settings.ini");
                 }
             }
 
-            if (colorChanged) {
-                ApplyCustomColors();
+            // UI Settings Category
+            if (ImGui::CollapsingHeader("UI Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+                // GUI Scale
+                if (ImGui::SliderFloat("GUI Scale", &appSettings.guiScale, 0.5f, 2.0f, "%.2f")) {
+                    ImGui::GetIO().FontGlobalScale = appSettings.guiScale;
+                    appSettings.saveToFile("settings.ini");
+                }
+                
+                ImGui::Separator();
+                
+                // Auto-load UI Colors
+                if (ImGui::Checkbox("Auto-load UI Colors", &appSettings.autoLoadColors)) {
+                    appSettings.saveToFile("settings.ini");
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::BeginTooltip();
+                    ImGui::Text("Warning: A 'themes' folder must be created in the same directory as the executable.");
+                    ImGui::Text("Make sure to place your .txt theme files inside this 'themes' folder for proper functionality.");
+                    ImGui::EndTooltip();
+                }
+                
+                // Theme selector button
+                if (ImGui::Button("Theme Selector")) {
+                    availableThemes = GetThemeFiles();  // Refresh themes list
+                    if (availableThemes.empty()) {
+                        printf("No themes found! Please add .txt files to the themes folder.\n");
+                    } else {
+                        showThemeSelector = true;
+                    }
+                }
+                
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Select a theme from the themes folder");
+                }
+                
+                ShowThemeSelector();  // Show the theme selector window if enabled
+            }
+
+            // UI Colors Category
+            if (ImGui::CollapsingHeader("UI Colors", ImGuiTreeNodeFlags_DefaultOpen)) {
+                bool colorChanged = false;
+                
+                ImGui::TextColored(uiColors.text, "Current Colors:");
+                colorChanged |= ImGui::ColorEdit3("Main Text", (float*)&uiColors.targetText);
+                colorChanged |= ImGui::ColorEdit3("Background", (float*)&uiColors.targetBackground);
+                colorChanged |= ImGui::ColorEdit3("Frame Background", (float*)&uiColors.targetFrame);
+                colorChanged |= ImGui::ColorEdit3("Interactive Elements", (float*)&uiColors.targetAccent);
+                colorChanged |= ImGui::ColorEdit3("Buttons & Tabs", (float*)&uiColors.targetButton);
+                colorChanged |= ImGui::ColorEdit3("Headers", (float*)&uiColors.targetHeader);
+                colorChanged |= ImGui::ColorEdit4("Border", (float*)&uiColors.targetBorder);
+
+                ImGui::SliderFloat("Transition Speed", &transitionSpeed, 0.01f, 0.5f, "%.2f");
+
+                if (ImGui::Button("Reset Colors")) {
+                    UIColors defaultColors;
+                    uiColors.targetText = defaultColors.text;
+                    uiColors.targetBackground = defaultColors.background;
+                    uiColors.targetFrame = defaultColors.frame;
+                    uiColors.targetButton = defaultColors.button;
+                    uiColors.targetHeader = defaultColors.header;
+                    uiColors.targetBorder = defaultColors.border;
+                    uiColors.targetAccent = defaultColors.accent;
+                }
+
+                ImGui::Separator();
+                if (ImGui::Button("Save UI Colors")) {
+                    std::string filename = ShowSaveFileDialog();
+                    if (!filename.empty()) {
+                        SaveUIColors(filename.c_str());
+                    }
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Load UI Colors")) {
+                    std::string filename = ShowOpenFileDialog();
+                    if (!filename.empty()) {
+                        LoadUIColors(filename.c_str());
+                        colorChanged = true;
+                    }
+                }
+
+                if (colorChanged) {
+                    ApplyCustomColors();
+                }
             }
 
             ImGui::EndTabItem();
@@ -1282,85 +1574,8 @@ public:
     }
 
     bool findStructure(int64_t seed, Pos* pos, int radius) {
-        static thread_local Generator g;
-        static thread_local bool initialized = false;
-        
-        if (!initialized) {
-            setupGenerator(&g, MC_NEWEST, 0);
-            initialized = true;
-        }
-
-        int32_t seed32 = (int32_t)(seed & 0xFFFFFFFF);
-        int regionRadius = (radius / 512) + 1;
-        const int regionStep = 1;
-
-        for (int regionX = -regionRadius; regionX <= regionRadius; regionX += regionStep) {
-            for (int regionZ = -regionRadius; regionZ <= regionRadius; regionZ += regionStep) {
-                StructureConfig sconf;
-                if (!getBedrockStructureConfig(selectedStructure, g.mc, &sconf)) {
-                    continue;
-                }
-
-                Pos p;
-                if (!getBedrockStructurePos(selectedStructure, g.mc, seed32, regionX, regionZ, &p)) {
-                    continue;
-                }
-
-                if (!isWithinRadius(p, radius)) {
-                    continue;
-                }
-
-                g.seed = seed;
-                g.dim = DIM_OVERWORLD;
-                applySeed(&g, DIM_OVERWORLD, seed);
-
-                if (!isViableStructurePos(selectedStructure, &g, p.x, p.z, 0)) {
-                    continue;
-                }
-
-                if (!isViableStructureTerrain(selectedStructure, &g, p.x, p.z)) {
-                    continue;
-                }
-
-                int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
-                if(biomeId == none) continue;
-
-                bool validBiome = true;
-                if (selectedStructure == Monument && !isDeepOcean(biomeId)) validBiome = false;
-                else if (selectedStructure == Mansion && biomeId != dark_forest) validBiome = false;
-                else if (selectedStructure == Shipwreck && !isShipwreckBiome(biomeId)) validBiome = false;
-                else if (selectedStructure == Village && !isVillageBiome(biomeId)) validBiome = false;
-
-                if (!validBiome) continue;
-
-                // Additional biome checks
-                if (selectedStructure == Monument || 
-                    selectedStructure == Mansion || 
-                    selectedStructure == Shipwreck || 
-                    selectedStructure == Village) {
-                    if (selectedStructure == Shipwreck) {
-                        if (!isShipwreckBiome(biomeId)) continue;
-                        if (!checkSurroundingBiomes(p.x, p.z, biomeId, 48, g)) continue;
-                    } else if (selectedStructure == Monument || 
-                               selectedStructure == Mansion || 
-                               selectedStructure == Village) {
-                        if (!checkSurroundingBiomes(p.x, p.z, biomeId, selectedStructure == Mansion ? 64 : 32, g)) {
-                            continue;
-                        }
-                    }
-                }
-
-                *pos = p;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    bool findMultipleStructures(int64_t seed, Pos* basePos) {
         try {
-            // Use thread-local generator pool for thread safety
-            static thread_local Generator g;  // Single generator per thread is enough
+            static thread_local Generator g;
             static thread_local bool initialized = false;
             
             if (!initialized) {
@@ -1368,22 +1583,119 @@ public:
                 initialized = true;
             }
 
-            // Get the lowest 32 bits of the seed
             int32_t seed32 = (int32_t)(seed & 0xFFFFFFFF);
+            int regionRadius = (radius / 512) + 1;
+            std::vector<Pos> validPositions;
 
-            // Keep track of found positions to avoid duplicates
-            std::vector<Pos> foundPositions;
+            // Initialize generator once
+            g.seed = seed;
+            g.dim = DIM_OVERWORLD;
+            applySeed(&g, DIM_OVERWORLD, seed);
+
+            for (int regionX = -regionRadius; regionX <= regionRadius; ++regionX) {
+                for (int regionZ = -regionRadius; regionZ <= regionRadius; ++regionZ) {
+                    if (shouldStop) return false;
+
+                    Pos p;
+                    if (!getBedrockStructurePos(selectedStructure, g.mc, seed32, regionX, regionZ, &p)) {
+                        continue;
+                    }
+
+                    // Calculate distance from origin
+                    int distance = (int)sqrt(p.x*p.x + p.z*p.z);
+                    if (distance < minSearchRadius || distance > radius) {
+                        continue;
+                    }
+
+                    // Basic validation
+                    if (!isViableStructurePos(selectedStructure, &g, p.x, p.z, 0)) {
+                        continue;
+                    }
+
+                    bool skipTerrainCheck = (selectedStructure == Ancient_City || 
+                                          selectedStructure == Monument);
+                    
+                    if (!skipTerrainCheck && !isViableStructureTerrain(selectedStructure, &g, p.x, p.z)) {
+                        continue;
+                    }
+
+                    int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
+                    if(biomeId == none) continue;
+                    
+                    bool validBiome = true;
+                    if (selectedStructure == Monument) {
+                        if (!isDeepOcean(biomeId)) {
+                            validBiome = false;
+                        }
+                    }
+                    else if (selectedStructure == Mansion) {
+                        if (biomeId != dark_forest) {
+                            validBiome = false;
+                        }
+                    }
+                    else if (selectedStructure == Shipwreck) {
+                        if (!isShipwreckBiome(biomeId)) {
+                            validBiome = false;
+                        }
+                    }
+                    else if (selectedStructure == Village) {
+                        if (!isVillageBiome(biomeId)) {
+                            validBiome = false;
+                        }
+                    }
+
+                    if (!validBiome) continue;
+
+                    // Add valid position
+                    validPositions.push_back(p);
+                }
+            }
+
+            // Find closest valid position
+            if (!validPositions.empty()) {
+                Pos bestPos = validPositions[0];
+                int bestDistance = INT_MAX;
+
+                for (const Pos& p : validPositions) {
+                    int distance = (int)sqrt(p.x*p.x + p.z*p.z);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestPos = p;
+                    }
+                }
+
+                *pos = bestPos;
+                return true;
+            }
+
+            return false;
+        } catch (const std::exception& e) {
+            return false;
+        }
+    }
+
+    bool findMultipleStructures(int64_t seed, Pos* basePos) {
+        try {
+            static thread_local Generator g;
+            static thread_local bool initialized = false;
+            
+            if (!initialized) {
+                setupGenerator(&g, MC_NEWEST, 0);
+                initialized = true;
+            }
+
+            int32_t seed32 = (int32_t)(seed & 0xFFFFFFFF);
+            std::vector<std::pair<int, Pos>> allFoundStructures;
 
             // First find the base structure
-            selectedStructure = baseStructureType;  // Set to base structure type
-            if (!findStructure(seed, basePos, searchRadius)) {
+            selectedStructure = baseStructureType;
+            if (!findStructure(seed, basePos, maxSearchRadius)) {
                 return false;
             }
-            foundPositions.push_back(*basePos);
+            allFoundStructures.push_back({baseStructureType, *basePos});
 
-            // Count enabled structures and reset found flags
+            // Count enabled structures
             int enabledCount = 0;
-            int foundCount = 0;
             for (auto& attached : attachedStructures) {
                 if (attached.required) {
                     enabledCount++;
@@ -1391,126 +1703,108 @@ public:
                 }
             }
 
-            // If no structures are enabled, consider it a success
-            if (enabledCount == 0) {
-                return true;
-            }
+            if (enabledCount == 0) return true;
 
-            // Now check for each enabled attached structure
+            // Initialize generator once
+            g.seed = seed;
+            g.dim = DIM_OVERWORLD;
+            applySeed(&g, DIM_OVERWORLD, seed);
+
+            // For each required structure
             for (auto& attached : attachedStructures) {
                 if (!attached.required) continue;
 
-                // Try to find the attached structure within its radius from the base structure
-                bool found = false;
-
-                // Search in regions around the base structure
                 int regionRadius = (attached.maxDistance / 512) + 1;
+                std::vector<Pos> validPositions;
 
-                try {
-                    for (int regionX = -regionRadius; regionX <= regionRadius && !found; ++regionX) {
-                        for (int regionZ = -regionRadius; regionZ <= regionRadius && !found; ++regionZ) {
-                            if (shouldStop) return false;  // Check for stop signal
+                // Search all regions for valid positions
+                for (int regionX = -regionRadius; regionX <= regionRadius; ++regionX) {
+                    for (int regionZ = -regionRadius; regionZ <= regionRadius; ++regionZ) {
+                        if (shouldStop) return false;
 
-                            Pos p;
-                            // First check with lower 32 bits
-                            if (!getBedrockStructurePos(attached.structureType, g.mc, seed32, regionX, regionZ, &p)) {
-                                continue;
-                            }
-
-                            // Calculate distance from base structure
-                            int dx = p.x - basePos->x;
-                            int dz = p.z - basePos->z;
-                            int distance = (int)sqrt(dx*dx + dz*dz);
-
-                            if (distance > attached.maxDistance) {
-                                continue;
-                            }
-
-                            // Check if this position is too close to any already found structure
-                            bool tooClose = false;
-                            for (const Pos& foundPos : foundPositions) {
-                                int fdx = p.x - foundPos.x;
-                                int fdz = p.z - foundPos.z;
-                                int foundDistance = (int)sqrt(fdx*fdx + fdz*fdz);
-                                // If it's the same structure type, ensure minimum distance of 128 blocks
-                                if ((attached.structureType == baseStructureType || 
-                                    std::any_of(attachedStructures.begin(), attachedStructures.end(), 
-                                              [&](const AttachedStructure& other) { 
-                                                  return other.found && other.structureType == attached.structureType; 
-                                              })) && 
-                                    foundDistance < 128) {
-                                    tooClose = true;
-                                    break;
-                                }
-                            }
-                            if (tooClose) continue;
-
-                            // Only now initialize the generator since we have a potential match
-                            g.seed = seed;
-                            g.dim = DIM_OVERWORLD;
-                            applySeed(&g, DIM_OVERWORLD, seed);
-
-                            // Basic validation first
-                            if (!isViableStructurePos(attached.structureType, &g, p.x, p.z, 0)) {
-                                continue;
-                            }
-
-                            // Skip terrain check for certain structures
-                            bool skipTerrainCheck = (attached.structureType == Ancient_City || 
-                                                  attached.structureType == Monument);
-                            
-                            if (!skipTerrainCheck && !isViableStructureTerrain(attached.structureType, &g, p.x, p.z)) {
-                                continue;
-                            }
-
-                            // Additional biome checks based on structure type
-                            int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
-                            if(biomeId == none) continue;  // Skip invalid biomes
-                            
-                            bool validBiome = true;
-                            if (attached.structureType == Monument) {
-                                if (!isDeepOcean(biomeId)) {
-                                    validBiome = false;
-                                }
-                            }
-                            else if (attached.structureType == Mansion) {
-                                if (biomeId != dark_forest) {
-                                    validBiome = false;
-                                }
-                            }
-                            else if (attached.structureType == Shipwreck) {
-                                if (!isShipwreckBiome(biomeId)) {
-                                    validBiome = false;
-                                }
-                            }
-                            else if (attached.structureType == Village) {
-                                if (!isVillageBiome(biomeId)) {
-                                    validBiome = false;
-                                }
-                            }
-
-                            if (!validBiome) continue;
-
-                            // Structure found within radius and not too close to other structures
-                            attached.foundPos = p;
-                            attached.found = true;
-                            foundCount++;
-                            found = true;
-                            foundPositions.push_back(p);
+                        Pos p;
+                        if (!getBedrockStructurePos(attached.structureType, g.mc, seed32, regionX, regionZ, &p)) {
+                            continue;
                         }
+
+                        // Check distance from base structure
+                        int dx = p.x - basePos->x;
+                        int dz = p.z - basePos->z;
+                        int distance = (int)sqrt(dx*dx + dz*dz);
+                        
+                        if (distance < attached.minDistance || distance > attached.maxDistance) {
+                            continue;
+                        }
+
+                        // Check if this exact position was already used
+                        bool positionUsed = false;
+                        for (const auto& found : allFoundStructures) {
+                            if (p.x == found.second.x && p.z == found.second.z) {
+                                positionUsed = true;
+                                break;
+                            }
+                        }
+                        if (positionUsed) continue;
+
+                        // Basic validation
+                        if (!isViableStructurePos(attached.structureType, &g, p.x, p.z, 0)) {
+                            continue;
+                        }
+
+                        bool skipTerrainCheck = (attached.structureType == Ancient_City || 
+                                               attached.structureType == Monument);
+                        
+                        if (!skipTerrainCheck && !isViableStructureTerrain(attached.structureType, &g, p.x, p.z)) {
+                            continue;
+                        }
+
+                        int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
+                        if (biomeId == none) continue;
+
+                        bool validBiome = true;
+                        if (attached.structureType == Monument && !isDeepOcean(biomeId)) {
+                            validBiome = false;
+                        }
+                        else if (attached.structureType == Mansion && biomeId != dark_forest) {
+                            validBiome = false;
+                        }
+                        else if (attached.structureType == Shipwreck && !isShipwreckBiome(biomeId)) {
+                            validBiome = false;
+                        }
+                        else if (attached.structureType == Village && !isVillageBiome(biomeId)) {
+                            validBiome = false;
+                        }
+
+                        if (!validBiome) continue;
+
+                        // Add to valid positions if it passed all checks
+                        validPositions.push_back(p);
                     }
-                } catch (const std::exception& e) {
-                    // Log error but continue with next structure
-                    currentStatus = "⚠️ Error checking structure: " + std::string(e.what());
-                    continue;
                 }
+
+                // If no valid positions found, fail
+                if (validPositions.empty()) {
+                    return false;
+                }
+
+                // Sort valid positions by distance from base
+                std::sort(validPositions.begin(), validPositions.end(), 
+                    [basePos](const Pos& a, const Pos& b) {
+                        int dxa = a.x - basePos->x;
+                        int dza = a.z - basePos->z;
+                        int dxb = b.x - basePos->x;
+                        int dzb = b.z - basePos->z;
+                        return (dxa*dxa + dza*dza) < (dxb*dxb + dzb*dzb);
+                    });
+
+                // Use the first valid position (closest to base)
+                attached.foundPos = validPositions[0];
+                attached.found = true;
+                allFoundStructures.push_back({attached.structureType, validPositions[0]});
             }
 
-            // Return true only if all enabled structures are found
-            return foundCount == enabledCount;
-
+            return true;
         } catch (const std::exception& e) {
-            currentStatus = "⚠️ Multiple structure search error: " + std::string(e.what());
             return false;
         }
     }
@@ -1520,11 +1814,19 @@ static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-int main(int argc, char** argv) {
+#ifdef _WIN32
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+#else
+int main(int argc, char** argv)
+#endif
+{
+    // Initialize GLFW
+    if (!glfwInit()) {
+        return 1;
+    }
+
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit())
-        return 1;
 
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
@@ -1532,7 +1834,7 @@ int main(int argc, char** argv) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(800, 600, "ChunkBiomes GUI", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Chunk Biomes GUI", NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
@@ -1542,42 +1844,40 @@ int main(int argc, char** argv) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    
-    // Customize colors to use green instead of blue
-    ImVec4* colors = ImGui::GetStyle().Colors;
-    colors[ImGuiCol_Header] = ImVec4(0.2f, 0.7f, 0.2f, 0.7f);           // Green header
-    colors[ImGuiCol_HeaderHovered] = ImVec4(0.3f, 0.8f, 0.3f, 0.8f);    // Lighter green on hover
-    colors[ImGuiCol_HeaderActive] = ImVec4(0.4f, 0.9f, 0.4f, 0.9f);     // Brightest green when active
-    
-    colors[ImGuiCol_Button] = ImVec4(0.2f, 0.7f, 0.2f, 0.6f);           // Green buttons
-    colors[ImGuiCol_ButtonHovered] = ImVec4(0.3f, 0.8f, 0.3f, 0.7f);    // Lighter green on hover
-    colors[ImGuiCol_ButtonActive] = ImVec4(0.4f, 0.9f, 0.4f, 0.8f);     // Brightest green when active
-    
-    colors[ImGuiCol_Tab] = ImVec4(0.2f, 0.7f, 0.2f, 0.6f);              // Green tabs
-    colors[ImGuiCol_TabHovered] = ImVec4(0.3f, 0.8f, 0.3f, 0.7f);       // Lighter green on hover
-    colors[ImGuiCol_TabActive] = ImVec4(0.4f, 0.9f, 0.4f, 0.8f);        // Brightest green when active
-    
-    // Checkbox and other interactive elements
-    colors[ImGuiCol_CheckMark] = ImVec4(0.1f, 0.9f, 0.1f, 1.0f);        // Bright green checkmark
-    colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.7f, 0.2f, 0.5f);          // Green frame background
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.3f, 0.8f, 0.3f, 0.6f);   // Lighter green frame background on hover
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.4f, 0.9f, 0.4f, 0.7f);    // Brightest green frame background when active
-    
-    // Sliders and scrollbars
-    colors[ImGuiCol_SliderGrab] = ImVec4(0.1f, 0.9f, 0.1f, 1.0f);       // Bright green slider grab
-    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.2f, 1.0f, 0.2f, 1.0f); // Even brighter green when active
-    
-    // Highlight and selection colors
-    colors[ImGuiCol_TextSelectedBg] = ImVec4(0.2f, 0.7f, 0.2f, 0.5f);   // Green text selection background
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
+
+    // Initialize settings (will create default settings if file doesn't exist)
+    appSettings.loadFromFile("settings.ini");
+
+    // Apply settings after ImGui is initialized
+    OPTIMAL_BATCH_SIZE = appSettings.batchSize;
+    generatorPoolSize = appSettings.generatorPoolSize;
+    io.FontGlobalScale = appSettings.guiScale;
+
+    // Check for themes
+    printf("Checking for themes on startup...\n");
+    availableThemes = GetThemeFiles();
+    
+    // If we have a saved theme and auto-load is enabled, load it
+    if (appSettings.autoLoadColors && !appSettings.autoLoadColorFile.empty()) {
+        printf("Auto-loading theme: %s\n", appSettings.autoLoadColorFile.c_str());
+        if (LoadUIColors(appSettings.autoLoadColorFile.c_str())) {
+            printf("Theme loaded successfully!\n");
+        } else {
+            printf("Failed to load theme!\n");
+        }
+    } else if (!availableThemes.empty()) {
+        // If we have themes but none is selected, show the selector
+        printf("Found %zu themes, showing selector...\n", availableThemes.size());
+        showThemeSelector = true;
+    }
 
     // Create structure finder
     StructureFinder finder;
@@ -1601,6 +1901,12 @@ int main(int argc, char** argv) {
 
         // Update colors with smooth transitions
         UpdateColors();
+
+        // Open theme selector if needed
+        if (showThemeSelector) {
+            ImGui::OpenPopup("Theme Selector");
+        }
+        ShowThemeSelector();
 
         // Set the clear color to match our background color
         glClearColor(uiColors.background.x, uiColors.background.y, uiColors.background.z, uiColors.background.w);
@@ -1634,6 +1940,11 @@ int main(int argc, char** argv) {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
+    // Save settings before exit
+    appSettings.batchSize = OPTIMAL_BATCH_SIZE;
+    appSettings.generatorPoolSize = generatorPoolSize;
+    appSettings.saveToFile("settings.ini");
 
     glfwDestroyWindow(window);
     glfwTerminate();

@@ -56,7 +56,22 @@ Screenshots of BetaV4:
 ![Screenshot_2741](https://github.com/user-attachments/assets/ccca8e08-7a02-4d12-a3ba-8e0d091db023)
 ![Screenshot_2740](https://github.com/user-attachments/assets/b95fe579-cc1c-4df5-b34f-e322e998905f)
 
+Anladım, işte daha düzgün bir şekilde güncellenmiş açıklama:
 
+---
+
+# How to Install and Apply Themes
+
+1. **Download the ThemePack**  
+   - Click the link to download **ThemePack.rar**:  
+     [Download ThemePack.rar](https://drive.usercontent.google.com/uc?id=1O4Q91cnOsY6Il6oE9SFs1I3S2s2k24ze&export=download)
+
+2. **Extract the Themes Folder to the App’s Folder**  
+   - Extract the **Themes** folder directly to the same location as the **executable (.exe)** file of the application.
+
+3. **Select a Theme**  
+   - Open the app, and the **Theme Selector** will appear automatically.  
+   - Simply choose the theme you want and click **Load** to apply it.
 
 ---
 

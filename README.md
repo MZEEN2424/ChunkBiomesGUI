@@ -56,8 +56,6 @@ Screenshots of BetaV4:
 ![Screenshot_2741](https://github.com/user-attachments/assets/ccca8e08-7a02-4d12-a3ba-8e0d091db023)
 ![Screenshot_2740](https://github.com/user-attachments/assets/b95fe579-cc1c-4df5-b34f-e322e998905f)
 
-Anladım, işte daha düzgün bir şekilde güncellenmiş açıklama:
-
 ---
 
 # How to Install and Apply Themes

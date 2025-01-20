@@ -4,8 +4,8 @@
 #include "cubiomes/rng.h"
 #include <stdbool.h>
 
-#ifndef min
-    #define min(X, Y) ((X) < (Y) ? (X) : (Y))
+#ifndef MIN
+    #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
 #endif
 
 /* ==================
@@ -22,7 +22,7 @@ static inline void mSetSeed(MersenneTwister *mt, uint64_t seed, int n) {
     if (n > 0) n += 397;
     mt->array[0] = seed;
     // (size_t)(n - 1) intentionally underflows if n <= 0
-    for (size_t i = 1; i <= min(sizeof(mt->array)/sizeof(*mt->array) - 1, (size_t)(n - 1)); ++i) {
+    for (size_t i = 1; i <= MIN(sizeof(mt->array)/sizeof(*mt->array) - 1, (size_t)(n - 1)); ++i) {
         seed = mt->array[i - 1] ^ (mt->array[i - 1] >> 30);
         mt->array[i] = 1812433253 * seed + i;
     }

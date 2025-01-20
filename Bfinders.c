@@ -229,4 +229,3 @@ int getBedrockStronghold(uint64_t seed) {
 
     return strongholdCount;
 }
-

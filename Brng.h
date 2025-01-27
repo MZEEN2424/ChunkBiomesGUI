@@ -1,119 +1,125 @@
-#ifndef __BRNG_H
-#define __BRNG_H
+#ifndef CHUNKBIOMES_BRNG_H_
+#define CHUNKBIOMES_BRNG_H_
 
-#include "cubiomes/rng.h"
+#include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include "cubiomes/rng.h"
 
 #ifndef MIN
     #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
 #endif
 
-/* ==================
-    Mersenne Twister
-   ================== */
+// Only define optimization macros if not already defined
+#if !defined(LIKELY) && (defined(__GNUC__) || defined(__clang__))
+    #define LIKELY(x) __builtin_expect(!!(x), 1)
+    #define UNLIKELY(x) __builtin_expect(!!(x), 0)
+    #define FORCE_INLINE __attribute__((always_inline)) static inline
+    #define ALIGN_CACHE __attribute__((aligned(64)))
+    #define HOT_FUNC __attribute__((hot))
+    #define PURE_FUNC __attribute__((pure))
+#else
+    #define LIKELY(x) (x)
+    #define UNLIKELY(x) (x)
+    #define FORCE_INLINE static inline
+    #define ALIGN_CACHE
+    #define HOT_FUNC
+    #define PURE_FUNC
+#endif
 
-STRUCT(MersenneTwister) {
-    uint_fast32_t array[624];
-    uint_fast16_t currentIndex;
-};
+#define MT_SIZE 624
+#define MT_M 397
+#define MT_MATRIX_A 0x9908b0dfU
+#define MT_UPPER_MASK 0x80000000U
+#define MT_LOWER_MASK 0x7fffffffU
 
-// Initializes a Mersenne Twister for `n` advancements, or fully initializes it if `n` <= 0.
-static inline void mSetSeed(MersenneTwister *mt, uint64_t seed, int n) {
-    if (n > 0) n += 397;
-    mt->array[0] = seed;
-    // (size_t)(n - 1) intentionally underflows if n <= 0
-    for (size_t i = 1; i <= MIN(sizeof(mt->array)/sizeof(*mt->array) - 1, (size_t)(n - 1)); ++i) {
-        seed = mt->array[i - 1] ^ (mt->array[i - 1] >> 30);
-        mt->array[i] = 1812433253 * seed + i;
+typedef struct ALIGN_CACHE {
+    uint32_t array[MT_SIZE];
+    uint_fast16_t index;
+} MersenneTwister;
+
+// Optimized twist operation
+FORCE_INLINE HOT_FUNC void _mTwist(MersenneTwister* const mt) {
+    static const uint32_t mag01[2] = {0, MT_MATRIX_A};
+    uint_fast16_t i;
+
+    for (i = 0; i < MT_SIZE - MT_M; i++) {
+        uint32_t y = (mt->array[i] & MT_UPPER_MASK) | (mt->array[i + 1] & MT_LOWER_MASK);
+        mt->array[i] = mt->array[i + MT_M] ^ (y >> 1) ^ mag01[y & 1];
     }
-    mt->currentIndex = sizeof(mt->array)/sizeof(*mt->array);
+    for (; i < MT_SIZE - 1; i++) {
+        uint32_t y = (mt->array[i] & MT_UPPER_MASK) | (mt->array[i + 1] & MT_LOWER_MASK);
+        mt->array[i] = mt->array[i - (MT_SIZE - MT_M)] ^ (y >> 1) ^ mag01[y & 1];
+    }
+    uint32_t y = (mt->array[MT_SIZE - 1] & MT_UPPER_MASK) | (mt->array[0] & MT_LOWER_MASK);
+    mt->array[MT_SIZE - 1] = mt->array[MT_M - 1] ^ (y >> 1) ^ mag01[y & 1];
+
+    mt->index = 0;
 }
 
-// Twist the PRNG, "scrambling" the internal state.
-static inline void _mTwist(MersenneTwister *mt) {
-    const size_t M = 397, J = sizeof(mt->array)/sizeof(*mt->array) - M;
+// Initialize with a seed
+FORCE_INLINE HOT_FUNC void mSetSeed(MersenneTwister* const mt, const uint64_t seed, const int n) {
+    if (LIKELY(n > 0)) {
+        const size_t end = MIN(MT_SIZE - 1, (size_t)(n + 396));
+        mt->array[0] = seed & 0xFFFFFFFF;
 
-    for (size_t i = 0; i < J; ++i) {
-        uint32_t val = (mt->array[i] & 0x80000000) | (mt->array[i + 1] & 0x7fffffff);
-        mt->array[i] = mt->array[i + M] ^ (val >> 1) ^ (val & 1 ? 2567483615 : 0);
+        for (size_t i = 1; i <= end; i++) {
+            uint32_t prev = mt->array[i - 1];
+            mt->array[i] = (1812433253U * (prev ^ (prev >> 30)) + i) & 0xFFFFFFFF;
+        }
     }
-    for (size_t i = J; i < sizeof(mt->array)/sizeof(*mt->array) - 1; ++i) {
-        uint32_t val = (mt->array[i] & 0x80000000) | (mt->array[i + 1] & 0x7fffffff);
-        mt->array[i] = mt->array[i - J] ^ (val >> 1) ^ (val & 1 ? 2567483615 : 0);
-    }
-    uint32_t val = (mt->array[sizeof(mt->array)/sizeof(*mt->array) - 1] & 0x80000000) | (mt->array[0] & 0x7fffffff);
-    mt->array[sizeof(mt->array)/sizeof(*mt->array) - 1] = mt->array[M - 1] ^ (val >> 1) ^ (val & 1 ? 2567483615 : 0);
-    mt->currentIndex = 0;
+    mt->index = MT_SIZE;
 }
 
-// Returns the next unsigned 32-bit integer from the PRNG.
-static inline uint32_t _mNext(MersenneTwister *mt) {
-    // If the current index is greater than the length of the array, twist the array's values.
-    if (mt->currentIndex >= sizeof(mt->array)/sizeof(*mt->array)) _mTwist(mt);
-    uint32_t val = mt->array[mt->currentIndex];
-    ++mt->currentIndex;
-    val ^= val >> 11;
-    val ^= (val << 7) & 2636928640;
-    val ^= (val << 15) & 4022730752;
-    return val ^ (val >> 18);
+// Generate the next random value
+FORCE_INLINE HOT_FUNC PURE_FUNC uint32_t _mNext(MersenneTwister* const mt) {
+    if (UNLIKELY(mt->index >= MT_SIZE)) {
+        _mTwist(mt);
+    }
+
+    uint32_t y = mt->array[mt->index++];
+    y ^= (y >> 11);
+    y ^= (y << 7) & 0x9d2c5680U;
+    y ^= (y << 15) & 0xefc60000U;
+    return y ^ (y >> 18);
 }
 
-// Returns the next integer in the range [0,n).
-static inline int mNextInt(MersenneTwister *mt, const int n) {
+// Generate a random integer in [0, n)
+FORCE_INLINE HOT_FUNC PURE_FUNC int mNextInt(MersenneTwister* const mt, const int n) {
+    if (LIKELY((n & (n - 1)) == 0)) {
+        // Fast path for power-of-2 n
+        return _mNext(mt) & (n - 1);
+    }
     return _mNext(mt) % n;
 }
 
-// static inline int mNextInt2(MersenneTwister *mt, const int n) {
-//     int bits, val;
-//     const int m = n - 1;
-
-//     if (!(m & n)) {
-//         uint64_t x = n * (uint64_t)(_mNext(mt) >> 1);
-//         return (int64_t)x >> 31;
-//     }
-//     do {
-//         bits = _mNext(mt) >> 1;
-//         val = bits % n;
-//     }
-//     while (bits - val + m < 0);
-//     return val;
-// }
-
-// static inline int mNextInt3(MersenneTwister *mt, const int n) {
-//     uint64_t r = (uint64_t)_mNext(mt) * n;
-//     if ((uint32_t)r < n) {
-//         while ((uint32_t)r < (~n + 1) % n) {
-//             r = (uint64_t)_mNext(mt) * n;
-//         }
-//     }
-//     return r >> 32;
-// }
-
-// Returns the next non-negative integer.
-static inline int mNextIntUnbound(MersenneTwister *mt) {
+// Generate an unbounded random integer
+FORCE_INLINE HOT_FUNC PURE_FUNC int mNextIntUnbound(MersenneTwister* const mt) {
     return _mNext(mt) >> 1;
 }
 
-// Returns the next double in the range [0,1).
-static inline double mNextDouble(MersenneTwister *mt) {
-    return _mNext(mt) * 2.3283064365386963E-10;
+// Generate a random double in [0.0, 1.0)
+FORCE_INLINE HOT_FUNC PURE_FUNC double mNextDouble(MersenneTwister* const mt) {
+    return _mNext(mt) * (1.0 / 4294967296.0);
 }
 
-// Returns the next float in the range [0,1).
-static inline float mNextFloat(MersenneTwister *mt) {
-    return mNextDouble(mt);
+// Generate a random float in [0.0f, 1.0f)
+FORCE_INLINE HOT_FUNC PURE_FUNC float mNextFloat(MersenneTwister* const mt) {
+    return _mNext(mt) * (1.0f / 4294967296.0f);
 }
 
-// Returns a pseudorandom boolean value.
-static inline bool mNextBool(MersenneTwister *mt) {
-    return _mNext(mt) >> 31;
+// Generate a random boolean value
+FORCE_INLINE HOT_FUNC PURE_FUNC bool mNextBool(MersenneTwister* const mt) {
+    return _mNext(mt) & 1;
 }
 
-// Jumps the Mersenne Twister forward `n` calls.
-static inline void mSkipN(MersenneTwister *mt, uint64_t n) {
-    uint64_t mIndex = mt->currentIndex + n; // Separate variable because mt->currentIndex is only 16 bits, while n can be up to 64
-    for (uint64_t i = 0; i < mIndex / (sizeof(mt->array)/sizeof(*mt->array)); ++i) _mTwist(mt);
-    mt->currentIndex = mIndex % sizeof(mt->array)/sizeof(*mt->array);
+// Skip N values in the sequence
+FORCE_INLINE HOT_FUNC void mSkipN(MersenneTwister* const mt, uint64_t n) {
+    const uint64_t twists = (mt->index + n) / MT_SIZE;
+    for (uint64_t i = 0; i < twists; i++) {
+        _mTwist(mt);
+    }
+    mt->index = (mt->index + n) % MT_SIZE;
 }
 
-#endif
+#endif // CHUNKBIOMES_BRNG_H_

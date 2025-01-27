@@ -1,5 +1,5 @@
-#ifndef __BFINDERS_H
-#define __BFINDERS_H
+#ifndef CHUNKBIOMES_BFINDERS_H_
+#define CHUNKBIOMES_BFINDERS_H_
 
 #include "cubiomes/finders.h"
 #include "Brng.h"
@@ -8,64 +8,100 @@
 extern "C" {
 #endif
 
-bool getBedrockStructureConfig(const int structureType, const int mc, StructureConfig *sconf);
+#ifndef MAX
+    #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
+#endif
 
-static inline ATTR(const)
-Pos getBedrockFeatureChunkInRegion(const StructureConfig *config, uint64_t seed, int regX, int regZ) {
-    MersenneTwister mt;
-    mSetSeed(&mt, regX*UINT64_C(341873128712) + regZ*UINT64_C(132897987541) + seed + config->salt, 2);
-    Pos pos;
-    pos.x = mNextInt(&mt, config->chunkRange);
-    pos.z = mNextInt(&mt, config->chunkRange);
+// Constants for seed mixing - using static const for better optimization
+static const uint64_t REGION_SALT_X = UINT64_C(341873128712);
+static const uint64_t REGION_SALT_Z = UINT64_C(132897987541);
+static const int CHUNK_OFFSET = 8;
+
+static inline uint64_t mix_seed(const uint64_t seed, const int regX, const int regZ, const uint64_t salt) {
+    return regX * REGION_SALT_X + regZ * REGION_SALT_Z + seed + salt;
+}
+
+static inline Pos getBedrockFeatureChunkInRegion(const StructureConfig * const config, const uint64_t seed, const int regX, const int regZ) {
+    MersenneTwister mt __attribute__((aligned(64)));
+    const uint64_t mixedSeed = mix_seed(seed, regX, regZ, config->salt);
+    mSetSeed(&mt, mixedSeed, 2);
+    
+    // Get both random numbers together for better pipelining
+    const int range = config->chunkRange;
+    Pos pos = {mNextInt(&mt, range), mNextInt(&mt, range)};
     return pos;
 }
 
-static inline ATTR(const)
-Pos getBedrockFeaturePos(const StructureConfig *config, uint64_t seed, int regX, int regZ) {
+static inline Pos getBedrockFeaturePos(const StructureConfig * const config, const uint64_t seed, const int regX, const int regZ) {
     Pos pos = getBedrockFeatureChunkInRegion(config, seed, regX, regZ);
-    // Bedrock features are offset by +8.
-    pos.x = (((uint64_t)regX*config->regionSize + pos.x) << 4) + 8;
-    pos.z = (((uint64_t)regZ*config->regionSize + pos.z) << 4) + 8;
+    
+    // Use SIMD-friendly operations
+    const uint64_t regionSize = config->regionSize;
+    const uint64_t xBase = (uint64_t)regX * regionSize;
+    const uint64_t zBase = (uint64_t)regZ * regionSize;
+    
+    // Combine operations for better vectorization
+    pos.x = ((xBase + pos.x) << 4) + CHUNK_OFFSET;
+    pos.z = ((zBase + pos.z) << 4) + CHUNK_OFFSET;
+    
     return pos;
 }
 
-static inline ATTR(const)
-Pos getBedrockLargeStructureChunkInRegion(const StructureConfig *config, uint64_t seed, int regX, int regZ) {
-    MersenneTwister mt;
-    mSetSeed(&mt, regX*UINT64_C(341873128712) + regZ*UINT64_C(132897987541) + seed + config->salt, 4);
-    Pos pos;
-    pos.x = (mNextInt(&mt, config->chunkRange) + mNextInt(&mt, config->chunkRange))/2;
-    pos.z = (mNextInt(&mt, config->chunkRange) + mNextInt(&mt, config->chunkRange))/2;
+static inline Pos getBedrockLargeStructureChunkInRegion(const StructureConfig * const config, const uint64_t seed, const int regX, const int regZ) {
+    MersenneTwister mt __attribute__((aligned(64)));
+    const uint64_t mixedSeed = mix_seed(seed, regX, regZ, config->salt);
+    mSetSeed(&mt, mixedSeed, 4);
+    
+    // Get all random numbers in one batch
+    const int range = config->chunkRange;
+    const int x1 = mNextInt(&mt, range);
+    const int x2 = mNextInt(&mt, range);
+    const int z1 = mNextInt(&mt, range);
+    const int z2 = mNextInt(&mt, range);
+    
+    // Use bit shifts for division where possible
+    Pos pos = {
+        (x1 + x2) >> 1,  // Faster than /2
+        (z1 + z2) >> 1
+    };
     return pos;
 }
 
-static inline ATTR(const)
-Pos getBedrockLargeStructurePos(const StructureConfig *config, uint64_t seed, int regX, int regZ) {
+static inline Pos getBedrockLargeStructurePos(const StructureConfig * const config, const uint64_t seed, const int regX, const int regZ) {
     Pos pos = getBedrockLargeStructureChunkInRegion(config, seed, regX, regZ);
-    // Bedrock features are offset by +8.
-    pos.x = (((uint64_t)regX*config->regionSize + pos.x) << 4) + 8;
-    pos.z = (((uint64_t)regZ*config->regionSize + pos.z) << 4) + 8;
+    
+    // SIMD-friendly operations
+    const uint64_t regionSize = config->regionSize;
+    const uint64_t xBase = (uint64_t)regX * regionSize;
+    const uint64_t zBase = (uint64_t)regZ * regionSize;
+    
+    // Combine operations
+    pos.x = ((xBase + pos.x) << 4) + CHUNK_OFFSET;
+    pos.z = ((zBase + pos.z) << 4) + CHUNK_OFFSET;
+    
     return pos;
 }
 
+static inline void bedrockChunkGenerateRnd(const uint64_t worldseed, const int chunkX, const int chunkZ, const int n, MersenneTwister * const mt) {
+    mSetSeed(mt, worldseed, 2);
+    
+    // Get both random numbers at once
+    const uint64_t r1 = mNextIntUnbound(mt);
+    const uint64_t r2 = mNextIntUnbound(mt);
+    
+    // Combine operations
+    const uint64_t mixedSeed = (r1 * chunkX) ^ (r2 * chunkZ) ^ worldseed;
+    mSetSeed(mt, mixedSeed, n);
+}
+
+// Main interface functions
+bool getBedrockStructureConfig(int structureType, int mc, StructureConfig *sconf);
 bool getBedrockStructurePos(int structureType, int mc, uint64_t seed, int regX, int regZ, Pos *pos);
-
-/* Returns the number of ravines found.
-   For 1.17 and earlier, two ravine checks are performed per coordinate: one "ordinary" one and a second for ocean ravines.
-   If the second is desired, `g` must be provided and have been initialized; in all other cases, `g` can be set to NULL.
-   If not NULL, the position and size of the ravines is stored in `ravine1` and `ravine2`.*/
+bool isViableBedrockStructurePos(int structureType, Generator *g, int blockX, int blockZ, uint32_t flags);
 int getRavinePos(int mc, uint64_t seed, int x, int z, const Generator *g, StructureVariant *ravine1, StructureVariant *ravine2);
-
-/* Returns if a ravine was found.
-   If not NULL, the position and size of the ravine, and whether it is giant, are stored in `ravine`.*/
-// Needs fixing
-bool getBedrockRavinePos(uint64_t seed, int x, int z, StructureVariant *ravine);
-
-/* Returns the number of potential strongholds for a given seed */
-int getBedrockStronghold(uint64_t seed);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // __BFINDERS_H
+#endif // CHUNKBIOMES_BFINDERS_H_

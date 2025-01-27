@@ -522,15 +522,20 @@ private:
             structureType(type), minDistance(minDist), maxDistance(maxDist), required(req), found(false), foundPos({0, 0}) {}
     };
     
-    bool multiStructureMode = false;
+    bool multiStructureMode = true;  // Changed to always true
     std::vector<AttachedStructure> attachedStructures;
     int baseStructureType = Village;  // The main structure to search around
+
+    // New: Structure limit feature
+    bool structureLimitEnabled = false;
+    int structureLimit = 10;
 
 public:
     StructureFinder() : 
         gen(rd())
     {
-        // setupGenerator(&g, MC_NEWEST, 0);  // Initialize generator in constructor
+        // Initialize with one attached structure by default
+        attachedStructures.push_back(AttachedStructure());
     }
 
     ~StructureFinder() {
@@ -550,6 +555,9 @@ public:
             case Ancient_City:     return "Ancient City";
             case Ruined_Portal:    return "Ruined Portal";
             case Shipwreck:        return "Shipwreck";
+            case Ocean_Ruin:       return "Ocean Ruins";
+            case Mineshaft:        return "Mineshaft";
+            case Treasure:         return "Buried Treasure";
             default:               return "Unknown";
         }
     }
@@ -567,6 +575,9 @@ public:
             case 8: return Ancient_City;
             case 9: return Ruined_Portal;
             case 10: return Shipwreck;
+            case 11: return Ocean_Ruin;
+            case 12: return Mineshaft;
+            case 13: return Treasure;
             default: return Village;
         }
     }
@@ -584,6 +595,9 @@ public:
             case Ancient_City: return 8;
             case Ruined_Portal: return 9;
             case Shipwreck: return 10;
+            case Ocean_Ruin: return 11;
+            case Mineshaft: return 12;
+            case Treasure: return 13;
             default: return 0;
         }
     }
@@ -601,11 +615,9 @@ public:
             positions.clear();
             foundSeeds.clear();
             
-            if (multiStructureMode) {
-                for (auto& attached : attachedStructures) {
-                    if (attached.required) {
-                        attached.found = false;
-                    }
+            for (auto& attached : attachedStructures) {
+                if (attached.required) {
+                    attached.found = false;
                 }
             }
         }
@@ -673,11 +685,7 @@ public:
                             bool found = false;
 
                             try {
-                                if (multiStructureMode) {
-                                    found = findMultipleStructures(seedToCheck, &pos);
-                                } else {
-                                    found = findStructure(seedToCheck, &pos, maxSearchRadius);
-                                }
+                                found = findMultipleStructures(seedToCheck, &pos);
                             } catch (const std::exception& e) {
                                 continue;
                             }
@@ -687,69 +695,58 @@ public:
                             if (found) {
                                 std::lock_guard<std::mutex> lock(structuresMutex);
                                 
-                                if (multiStructureMode) {
-                                    // Create combined structure description
-                                    std::string structures = std::string(struct2str(baseStructureType)) + 
-                                                           " [" + std::to_string(pos.x) +
-                                                           ", " + std::to_string(pos.z) + "]";
-                                    
-                                    // Count enabled and found structures
-                                    int enabledCount = 0;
-                                    int foundCount = 0;
-                                    for (const auto& attached : attachedStructures) {
-                                        if (attached.required) {
-                                            enabledCount++;
-                                            if (attached.found) {
-                                                foundCount++;
-                                                structures += "\n+ " + std::string(struct2str(attached.structureType)) +
-                                                            " [" + std::to_string(attached.foundPos.x) +
-                                                            ", " + std::to_string(attached.foundPos.z) + "]";
-                                            }
+                                // Create combined structure description
+                                std::string structures = std::string(struct2str(baseStructureType)) + 
+                                                       " [" + std::to_string(pos.x) +
+                                                       ", " + std::to_string(pos.z) + "]";
+                                
+                                // Count enabled and found structures
+                                int enabledCount = 0;
+                                int foundCount = 0;
+                                for (const auto& attached : attachedStructures) {
+                                    if (attached.required) {
+                                        enabledCount++;
+                                        if (attached.found) {
+                                            foundCount++;
+                                            structures += "\n+ " + std::string(struct2str(attached.structureType)) +
+                                                        " [" + std::to_string(attached.foundPos.x) +
+                                                        ", " + std::to_string(attached.foundPos.z) + "]";
                                         }
                                     }
-                                    
-                                    // Only add to results if we found all required structures
-                                    if (foundCount == enabledCount || !continuousSearch) {
-                                        structureNames.push_back(structures);
-                                        positions.push_back(pos);
-                                        foundSeeds.push_back(seedToCheck);
-                                        
-                                        // Update status with found information
-                                        std::string foundMsg = "[FOUND] Seed: " + std::to_string(seedToCheck) + "\n";
-                                        foundMsg += "Base " + std::string(struct2str(baseStructureType)) +
-                                                  ": [" + std::to_string(pos.x) +
-                                                  ", " + std::to_string(pos.z) + "]";
-                                        
-                                        for (const auto& attached : attachedStructures) {
-                                            if (attached.required && attached.found) {
-                                                int dx = attached.foundPos.x - pos.x;
-                                                int dz = attached.foundPos.z - pos.z;
-                                                int distance = (int)sqrt(dx*dx + dz*dz);
-                                                
-                                                foundMsg += "\n" + std::string(struct2str(attached.structureType)) +
-                                                          ": [" + std::to_string(attached.foundPos.x) +
-                                                          ", " + std::to_string(attached.foundPos.z) + "]" +
-                                                          " (Distance: " + std::to_string(distance) + "m)";
-                                            }
-                                        }
-                                        currentStatus = foundMsg;
-                                        
-                                        if (!continuousSearch) {
-                                            shouldStop = true;
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    structureNames.push_back(struct2str(selectedStructure));
+                                }
+                                
+                                // Only add to results if we found all required structures
+                                if (foundCount == enabledCount || !continuousSearch) {
+                                    structureNames.push_back(structures);
                                     positions.push_back(pos);
                                     foundSeeds.push_back(seedToCheck);
-                                    currentStatus = "[FOUND] Seed: " + std::to_string(seedToCheck) +
-                                                  " | Coords: [" + std::to_string(pos.x) +
-                                                  ", " + std::to_string(pos.z) + "]" +
-                                                  " | Distance: " + std::to_string((int)sqrt(pow(pos.x, 2) + pow(pos.z, 2))) + "m";
                                     
-                                    if (!continuousSearch) {
+                                    // Update status with found information
+                                    std::string foundMsg = "[FOUND] Seed: " + std::to_string(seedToCheck) + "\n";
+                                    foundMsg += "Base " + std::string(struct2str(baseStructureType)) +
+                                              ": [" + std::to_string(pos.x) +
+                                              ", " + std::to_string(pos.z) + "]";
+                                    
+                                    for (const auto& attached : attachedStructures) {
+                                        if (attached.required && attached.found) {
+                                            int dx = attached.foundPos.x - pos.x;
+                                            int dz = attached.foundPos.z - pos.z;
+                                            int distance = (int)sqrt(dx*dx + dz*dz);
+                                            
+                                            foundMsg += "\n" + std::string(struct2str(attached.structureType)) +
+                                                      ": [" + std::to_string(attached.foundPos.x) +
+                                                      ", " + std::to_string(attached.foundPos.z) + "]" +
+                                                      " (Distance: " + std::to_string(distance) + "m)";
+                                        }
+                                    }
+                                    currentStatus = foundMsg;
+                                    
+                                    // Check both structure limit and continuous search
+                                    if ((structureLimitEnabled && structureNames.size() >= structureLimit) || !continuousSearch) {
                                         shouldStop = true;
+                                        if (structureLimitEnabled && structureNames.size() >= structureLimit) {
+                                            currentStatus += "\nStructure limit reached (" + std::to_string(structureLimit) + ")";
+                                        }
                                         break;
                                     }
                                 }
@@ -857,7 +854,7 @@ public:
 
         // Version and License
         ImGui::Separator();
-        ImGui::Text("Version: BetaV4");
+        ImGui::Text("Version: BetaV5");
         ImGui::TextWrapped(
             "License Information:\n"
             "- Core functionality and algorithms: Rights reserved by Chunkbase\n"
@@ -950,23 +947,6 @@ public:
         ImGui::Text("Search Settings");
         ImGui::Separator();
 
-        // Structure Type Selection
-        ImGui::Text("Structure Finding Type:");
-        ImGui::SameLine();
-        
-        // Mode selection
-        if (ImGui::RadioButton("Single", !multiStructureMode)) {
-            multiStructureMode = false;
-        }
-        ImGui::SameLine();
-        if (ImGui::RadioButton("Multiple", multiStructureMode)) {
-            multiStructureMode = true;
-            if (attachedStructures.empty()) {
-                // Initialize with empty vector
-                attachedStructures.clear();
-            }
-        }
-
         // Seed Range Selection
         ImGui::Text("Seed Range:");
         float spacing = 10.0f;
@@ -1007,104 +987,90 @@ public:
         ImGui::PopStyleVar();
         ImGui::Separator();
 
-        if (!multiStructureMode) {
-            // Original single structure selection
-            const char* structures[] = {
-                "Village", "Desert Pyramid", "Jungle Pyramid", "Swamp Hut",
-                "Igloo", "Monument", "Mansion", "Outpost", 
-                "Ancient City", "Ruined Portal", "Shipwreck"
-            };
-            static int structureIndex = 0;
-            if (ImGui::Combo("Structure Type", &structureIndex, structures, IM_ARRAYSIZE(structures))) {
-                selectedStructure = getStructureTypeFromIndex(structureIndex);
-            }
-        } else {
-            // Multi-structure mode UI
-            ImGui::BeginChild("MultiStructureConfig", ImVec2(0, 250), true);
-            
-            // Base structure selection
-            const char* structures[] = {
-                "Village", "Desert Pyramid", "Jungle Pyramid", "Swamp Hut",
-                "Igloo", "Monument", "Mansion", "Outpost", 
-                "Ancient City", "Ruined Portal", "Shipwreck"
-            };
-            static int baseIndex = 0;
-            if (ImGui::Combo("Base Structure", &baseIndex, structures, IM_ARRAYSIZE(structures))) {
-                baseStructureType = getStructureTypeFromIndex(baseIndex);
-                selectedStructure = baseStructureType;
-            }
+        // Base Structure selection moved after seed range
+        ImGui::Text("Base Structure:");
+        const char* structures[] = {
+            "Village", "Desert Pyramid", "Jungle Pyramid", "Swamp Hut",
+            "Igloo", "Monument", "Mansion", "Outpost", 
+            "Ancient City", "Ruined Portal", "Shipwreck", "Ocean Ruins",
+            "Mineshaft", "Buried Treasure"
+        };
+        static int baseIndex = 0;
+        if (ImGui::Combo("##BaseStructure", &baseIndex, structures, IM_ARRAYSIZE(structures))) {
+            baseStructureType = getStructureTypeFromIndex(baseIndex);
+            selectedStructure = baseStructureType;
+        }
+        ImGui::Separator();
 
-            ImGui::Text("Attached Structures:");
-            ImGui::Separator();
+        // Attached Structures
+        ImGui::Text("Attached Structures:");
+        ImGui::Separator();
 
-            // Table for attached structures with background color matching the UI
-            ImGui::PushStyleColor(ImGuiCol_TableHeaderBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
-            ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
-            ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+        // Table for attached structures with background color matching the UI
+        ImGui::PushStyleColor(ImGuiCol_TableHeaderBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+        ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+        ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
 
-            if (ImGui::BeginTable("AttachedStructures", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
-                ImGui::TableSetupColumn("Enable", ImGuiTableColumnFlags_WidthFixed, 50.0f);
-                ImGui::TableSetupColumn("Structure Type", ImGuiTableColumnFlags_WidthFixed, 120.0f);
-                ImGui::TableSetupColumn("Min Distance", ImGuiTableColumnFlags_WidthFixed, 160.0f);
-                ImGui::TableSetupColumn("Max Distance", ImGuiTableColumnFlags_WidthFixed, 160.0f);
-                ImGui::TableHeadersRow();
+        if (ImGui::BeginTable("AttachedStructures", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+            ImGui::TableSetupColumn("Enable", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+            ImGui::TableSetupColumn("Structure Type", ImGuiTableColumnFlags_WidthFixed, 120.0f);
+            ImGui::TableSetupColumn("Min Distance", ImGuiTableColumnFlags_WidthFixed, 160.0f);
+            ImGui::TableSetupColumn("Max Distance", ImGuiTableColumnFlags_WidthFixed, 160.0f);
+            ImGui::TableHeadersRow();
 
-                for (size_t i = 0; i < attachedStructures.size(); i++) {
-                    ImGui::TableNextRow();
-                    
-                    // Enable checkbox
-                    ImGui::TableNextColumn();
-                    ImGui::Checkbox(("##required" + std::to_string(i)).c_str(), &attachedStructures[i].required);
+            for (size_t i = 0; i < attachedStructures.size(); i++) {
+                ImGui::TableNextRow();
+                
+                // Enable checkbox
+                ImGui::TableNextColumn();
+                ImGui::Checkbox(("##required" + std::to_string(i)).c_str(), &attachedStructures[i].required);
 
-                    // Structure type combo
-                    ImGui::TableNextColumn();
-                    int structIndex = getIndexFromStructureType(attachedStructures[i].structureType);
-                    if (ImGui::Combo(("##type" + std::to_string(i)).c_str(), &structIndex, structures, IM_ARRAYSIZE(structures))) {
-                        attachedStructures[i].structureType = getStructureTypeFromIndex(structIndex);
-                    }
-
-                    // Min distance column
-                    ImGui::TableNextColumn();
-                    ImGui::SetNextItemWidth(60);
-                    ImGui::DragInt(("##mindist" + std::to_string(i)).c_str(), &attachedStructures[i].minDistance, 1.0f, 0, attachedStructures[i].maxDistance);
-                    ImGui::SameLine();
-                    if (ImGui::Button(("-##mind" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
-                        attachedStructures[i].minDistance = std::max(0, attachedStructures[i].minDistance - 16);
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button(("+##mind" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
-                        attachedStructures[i].minDistance = std::min(attachedStructures[i].maxDistance, attachedStructures[i].minDistance + 16);
-                    }
-
-                    // Max distance column
-                    ImGui::TableNextColumn();
-                    ImGui::SetNextItemWidth(60);
-                    ImGui::DragInt(("##maxdist" + std::to_string(i)).c_str(), &attachedStructures[i].maxDistance, 1.0f, attachedStructures[i].minDistance, 10000);
-                    ImGui::SameLine();
-                    if (ImGui::Button(("-##maxd" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
-                        attachedStructures[i].maxDistance = std::max(attachedStructures[i].minDistance, attachedStructures[i].maxDistance - 16);
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button(("+##maxd" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
-                        attachedStructures[i].maxDistance = std::min(10000, attachedStructures[i].maxDistance + 16);
-                    }
+                // Structure type combo
+                ImGui::TableNextColumn();
+                int structIndex = getIndexFromStructureType(attachedStructures[i].structureType);
+                if (ImGui::Combo(("##type" + std::to_string(i)).c_str(), &structIndex, structures, IM_ARRAYSIZE(structures))) {
+                    attachedStructures[i].structureType = getStructureTypeFromIndex(structIndex);
                 }
-                ImGui::EndTable();
-            }
-            
-            ImGui::PopStyleColor(3);
 
-            if (ImGui::Button("Add Structure")) {
-                if (attachedStructures.size() < 5) { // Limit to 5 attached structures
-                    attachedStructures.push_back(AttachedStructure());
+                // Min distance column
+                ImGui::TableNextColumn();
+                ImGui::SetNextItemWidth(60);
+                ImGui::DragInt(("##mindist" + std::to_string(i)).c_str(), &attachedStructures[i].minDistance, 1.0f, 0, attachedStructures[i].maxDistance);
+                ImGui::SameLine();
+                if (ImGui::Button(("-##mind" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
+                    attachedStructures[i].minDistance = std::max(0, attachedStructures[i].minDistance - 16);
+                }
+                ImGui::SameLine();
+                if (ImGui::Button(("+##mind" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
+                    attachedStructures[i].minDistance = std::min(attachedStructures[i].maxDistance, attachedStructures[i].minDistance + 16);
+                }
+
+                // Max distance column
+                ImGui::TableNextColumn();
+                ImGui::SetNextItemWidth(60);
+                ImGui::DragInt(("##maxdist" + std::to_string(i)).c_str(), &attachedStructures[i].maxDistance, 1.0f, attachedStructures[i].minDistance, 10000);
+                ImGui::SameLine();
+                if (ImGui::Button(("-##maxd" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
+                    attachedStructures[i].maxDistance = std::max(attachedStructures[i].minDistance, attachedStructures[i].maxDistance - 16);
+                }
+                ImGui::SameLine();
+                if (ImGui::Button(("+##maxd" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
+                    attachedStructures[i].maxDistance = std::min(10000, attachedStructures[i].maxDistance + 16);
                 }
             }
-            ImGui::SameLine();
-            if (ImGui::Button("Remove Structure") && !attachedStructures.empty()) {
-                attachedStructures.pop_back();
-            }
+            ImGui::EndTable();
+        }
+        
+        ImGui::PopStyleColor(3);
 
-            ImGui::EndChild();
+        if (ImGui::Button("Add Structure")) {
+            if (attachedStructures.size() < 5) { // Limit to 5 attached structures
+                attachedStructures.push_back(AttachedStructure());
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Remove Structure") && !attachedStructures.empty()) {
+            attachedStructures.pop_back();
         }
 
         // Rest of the original UI (radius, continuous search, etc.)
@@ -1144,8 +1110,22 @@ public:
         ImGui::EndGroup();
         ImGui::PopItemWidth();
 
-        // Continuous Search Checkbox
+        // Structure Limit Search feature
+        ImGui::Text("Structure Limit Search:");
+        ImGui::Checkbox("Enable Limit##structlimit", &structureLimitEnabled);
+        if (structureLimitEnabled) {
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(100);
+            ImGui::DragInt("##structlimitvalue", &structureLimit, 1, 1, 1000, "Limit: %d");
+            if (ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::TextUnformatted("Search will stop after finding this many structures");
+                ImGui::EndTooltip();
+            }
+        }
         ImGui::Separator();
+
+        // Continuous Search Checkbox
         ImGui::Checkbox("Continuous Search", &continuousSearch);
         ImGui::SameLine();
         ImGui::TextDisabled("(?)");
@@ -1229,11 +1209,11 @@ public:
                                                   ImGuiTableFlags_Reorderable, ImVec2(0, 300))) {
                 
                 // Setup columns
-                ImGui::TableSetupColumn("No.", ImGuiTableColumnFlags_WidthFixed, 50.0f);
-                ImGui::TableSetupColumn("Seed", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn("Structure", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("#No", ImGuiTableColumnFlags_WidthFixed, 30.0f);
+                ImGui::TableSetupColumn("Seed", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+                ImGui::TableSetupColumn("Structures", ImGuiTableColumnFlags_WidthStretch);
                 ImGui::TableSetupColumn("Coordinates", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+                ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 120.0f);  // Increased from default
                 ImGui::TableHeadersRow();
 
                 // Display seeds in rows
@@ -1304,7 +1284,9 @@ public:
                     // Actions column
                     ImGui::TableNextColumn();
                     ImGui::PushID(static_cast<int>(i));
-                    if (ImGui::Button("Copy")) {
+                    char copyText[32];
+                    snprintf(copyText, sizeof(copyText), "Copy Seed %zu", i + 1);
+                    if (ImGui::Button(copyText)) {
                         char seedStr[32];
                         snprintf(seedStr, sizeof(seedStr), "%lld", foundSeeds[i]);
                         ImGui::SetClipboardText(seedStr);
@@ -1502,6 +1484,18 @@ public:
                biomeId == sunflower_plains;
     }
 
+    bool isOceanRuinBiome(int biomeId) {
+        return biomeId == ocean ||
+               biomeId == frozen_ocean ||
+               biomeId == deep_frozen_ocean ||
+               biomeId == cold_ocean ||
+               biomeId == deep_cold_ocean ||
+               biomeId == lukewarm_ocean ||
+               biomeId == deep_lukewarm_ocean ||
+               biomeId == warm_ocean ||
+               biomeId == deep_ocean;
+    }
+
     void resetSearchMetrics() {
         seedsChecked = 0;
         foundSeeds.clear();
@@ -1528,7 +1522,7 @@ public:
     bool checkSurroundingBiomes(int centerX, int centerZ, int biomeId, int radius, Generator& g) {
         int count = 0;
         int total = 0;
-        const float threshold = 0.9f;
+        const float threshold = 1.0f;
         const int step = 8; // Check every 8 blocks for speed
         const int radiusSquared = radius * radius;
         
@@ -1573,7 +1567,7 @@ public:
         return total > 0 && (float)count/total >= threshold;
     }
 
-    bool findStructure(int64_t seed, Pos* pos, int radius) {
+    bool findMultipleStructures(int64_t seed, Pos* basePos) {
         try {
             static thread_local Generator g;
             static thread_local bool initialized = false;
@@ -1583,10 +1577,11 @@ public:
                 initialized = true;
             }
 
+            // Find base structure first
             int32_t seed32 = (int32_t)(seed & 0xFFFFFFFF);
-            int regionRadius = (radius / 512) + 1;
+            int regionRadius = (maxSearchRadius / 512) + 1;
 
-            // Early structure position check before applying seed
+            // Early structure position check for base structure
             bool foundValidPosition = false;
             Pos bestPos;
             int bestDistance = INT_MAX;
@@ -1596,13 +1591,13 @@ public:
                     if (shouldStop) return false;
 
                     Pos p;
-                    if (!getBedrockStructurePos(selectedStructure, g.mc, seed32, regionX, regionZ, &p)) {
+                    if (!getBedrockStructurePos(baseStructureType, g.mc, seed32, regionX, regionZ, &p)) {
                         continue;
                     }
 
                     // Calculate distance from origin
                     int distance = (int)sqrt(p.x*p.x + p.z*p.z);
-                    if (distance < minSearchRadius || distance > radius) {
+                    if (distance < minSearchRadius || distance > maxSearchRadius) {
                         continue;
                     }
 
@@ -1615,190 +1610,226 @@ public:
                 }
             }
 
-            // If no valid position found in the preliminary check, skip this seed
+            // If no valid position found for base structure, skip this seed
             if (!foundValidPosition) {
                 return false;
             }
 
-            // Only initialize generator and apply seed if we found a potential position
+            // Initialize generator with the seed
             g.seed = seed;
             g.dim = DIM_OVERWORLD;
             applySeed(&g, DIM_OVERWORLD, seed);
 
-            // Validate the best position found
-            if (!isViableStructurePos(selectedStructure, &g, bestPos.x, bestPos.z, 0)) {
+            // Validate the base structure position
+            if (!isViableStructurePos(baseStructureType, &g, bestPos.x, bestPos.z, 0)) {
                 return false;
             }
 
-            bool skipTerrainCheck = (selectedStructure == Ancient_City || 
-                                   selectedStructure == Monument);
+            bool skipTerrainCheck = (baseStructureType == Ancient_City || 
+                                   baseStructureType == Monument ||
+                                   baseStructureType == Ocean_Ruin);
             
-            if (!skipTerrainCheck && !isViableStructureTerrain(selectedStructure, &g, bestPos.x, bestPos.z)) {
+            if (!skipTerrainCheck && !isViableStructureTerrain(baseStructureType, &g, bestPos.x, bestPos.z)) {
                 return false;
             }
 
+            // Check biome validity for base structure
             int biomeId = getBiomeAt(&g, 4, bestPos.x >> 2, 319>>2, bestPos.z >> 2);
             if(biomeId == none) return false;
             
             bool validBiome = true;
-            if (selectedStructure == Monument) {
+            if (baseStructureType == Monument) {
                 if (!isDeepOcean(biomeId)) {
                     validBiome = false;
                 }
             }
-            else if (selectedStructure == Mansion) {
+            else if (baseStructureType == Mansion) {
                 if (biomeId != dark_forest) {
                     validBiome = false;
                 }
             }
-            else if (selectedStructure == Shipwreck) {
+            else if (baseStructureType == Shipwreck) {
                 if (!isShipwreckBiome(biomeId)) {
                     validBiome = false;
                 }
             }
-            else if (selectedStructure == Village) {
+            else if (baseStructureType == Village) {
                 if (!isVillageBiome(biomeId)) {
+                    validBiome = false;
+                }
+            }
+            else if (baseStructureType == Ocean_Ruin) {
+                if (!isOceanRuinBiome(biomeId)) {
                     validBiome = false;
                 }
             }
 
             if (!validBiome) return false;
 
-            *pos = bestPos;
-            return true;
+            *basePos = bestPos;
 
-        } catch (const std::exception& e) {
-            return false;
-        }
-    }
-
-    bool findMultipleStructures(int64_t seed, Pos* basePos) {
-        try {
-            static thread_local Generator g;
-            static thread_local bool initialized = false;
-            
-            if (!initialized) {
-                setupGenerator(&g, MC_NEWEST, 0);
-                initialized = true;
-            }
-
-            int32_t seed32 = (int32_t)(seed & 0xFFFFFFFF);
-            std::vector<std::pair<int, Pos>> allFoundStructures;
-
-            // First find the base structure
-            selectedStructure = baseStructureType;
-            if (!findStructure(seed, basePos, maxSearchRadius)) {
-                return false;
-            }
-            allFoundStructures.push_back({baseStructureType, *basePos});
-
-            // Count enabled structures
+            // Now search for attached structures
             int enabledCount = 0;
+            int maxRegionRadius = 0;
             for (auto& attached : attachedStructures) {
                 if (attached.required) {
                     enabledCount++;
                     attached.found = false;
+                    int regionRadius = (attached.maxDistance / 512) + 1;
+                    maxRegionRadius = std::max(maxRegionRadius, regionRadius);
                 }
             }
 
             if (enabledCount == 0) return true;
 
-            // Initialize generator once
-            g.seed = seed;
-            g.dim = DIM_OVERWORLD;
-            applySeed(&g, DIM_OVERWORLD, seed);
+            std::vector<std::pair<int, int>> regions;
+            regions.reserve((2 * maxRegionRadius + 1) * (2 * maxRegionRadius + 1));
 
-            // For each required structure
+            // Generate regions in a spiral pattern for faster nearby structure finding
+            for (int layer = 0; layer <= maxRegionRadius; layer++) {
+                if (layer == 0) {
+                    regions.emplace_back(0, 0);
+                    continue;
+                }
+                for (int x = -layer; x <= layer; x++) {
+                    regions.emplace_back(x, -layer);
+                }
+                for (int z = -layer + 1; z <= layer; z++) {
+                    regions.emplace_back(layer, z);
+                }
+                for (int x = layer - 1; x >= -layer; x--) {
+                    regions.emplace_back(x, layer);
+                }
+                for (int z = layer - 1; z >= -layer + 1; z--) {
+                    regions.emplace_back(-layer, z);
+                }
+            }
+
+            std::vector<std::pair<int, Pos>> allFoundStructures;
+            allFoundStructures.reserve(enabledCount + 1);
+            allFoundStructures.push_back({baseStructureType, *basePos});
+
+            const int baseX = basePos->x;
+            const int baseZ = basePos->z;
+
+            // Process each required structure
             for (auto& attached : attachedStructures) {
                 if (!attached.required) continue;
 
-                int regionRadius = (attached.maxDistance / 512) + 1;
                 std::vector<Pos> validPositions;
+                validPositions.reserve(32);
 
-                // Search all regions for valid positions
-                for (int regionX = -regionRadius; regionX <= regionRadius; ++regionX) {
-                    for (int regionZ = -regionRadius; regionZ <= regionRadius; ++regionZ) {
-                        if (shouldStop) return false;
+                const int minDistSq = attached.minDistance * attached.minDistance;
+                const int maxDistSq = attached.maxDistance * attached.maxDistance;
+                const int structType = attached.structureType;
+                const bool skipTerrainCheck = (structType == Ancient_City || 
+                                             structType == Monument ||
+                                             structType == Ocean_Ruin);
 
+                const size_t chunkSize = 64;
+                std::vector<Pos> chunkValidPositions;
+                chunkValidPositions.reserve(chunkSize);
+
+                for (size_t i = 0; i < regions.size(); i += chunkSize) {
+                    if (shouldStop) return false;
+
+                    const size_t endIdx = std::min(i + chunkSize, regions.size());
+                    chunkValidPositions.clear();
+
+                    #pragma omp parallel for schedule(dynamic) shared(chunkValidPositions) if(endIdx - i > 16)
+                    for (size_t j = i; j < endIdx; ++j) {
+                        if (shouldStop) continue;
+
+                        const auto& region = regions[j];
                         Pos p;
-                        if (!getBedrockStructurePos(attached.structureType, g.mc, seed32, regionX, regionZ, &p)) {
-                            continue;
-                        }
-
-                        // Check distance from base structure
-                        int dx = p.x - basePos->x;
-                        int dz = p.z - basePos->z;
-                        int distance = (int)sqrt(dx*dx + dz*dz);
                         
-                        if (distance < attached.minDistance || distance > attached.maxDistance) {
+                        if (!getBedrockStructurePos(structType, g.mc, seed32, region.first, region.second, &p)) {
                             continue;
                         }
 
-                        // Check if this exact position was already used
+                        // Quick distance check
+                        const int dx = p.x - baseX;
+                        const int dz = p.z - baseZ;
+                        const int distSq = dx*dx + dz*dz;
+                        if (distSq < minDistSq || distSq > maxDistSq) continue;
+
+                        // Quick overlap check
                         bool positionUsed = false;
-                        for (const auto& found : allFoundStructures) {
-                            if (p.x == found.second.x && p.z == found.second.z) {
-                                positionUsed = true;
-                                break;
+                        #pragma omp critical
+                        {
+                            for (const auto& found : allFoundStructures) {
+                                if (p.x == found.second.x && p.z == found.second.z) {
+                                    positionUsed = true;
+                                    break;
+                                }
                             }
                         }
                         if (positionUsed) continue;
 
-                        // Basic validation
-                        if (!isViableStructurePos(attached.structureType, &g, p.x, p.z, 0)) {
+                        // Structure position check
+                        if (!isViableStructurePos(structType, &g, p.x, p.z, 0)) {
                             continue;
                         }
 
-                        bool skipTerrainCheck = (attached.structureType == Ancient_City || 
-                                               attached.structureType == Monument);
-                        
-                        if (!skipTerrainCheck && !isViableStructureTerrain(attached.structureType, &g, p.x, p.z)) {
+                        // Terrain check if needed
+                        if (!skipTerrainCheck && !isViableStructureTerrain(structType, &g, p.x, p.z)) {
                             continue;
                         }
 
-                        int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
+                        // Biome validation
+                        const int biomeId = getBiomeAt(&g, 4, p.x >> 2, 319>>2, p.z >> 2);
                         if (biomeId == none) continue;
 
                         bool validBiome = true;
-                        if (attached.structureType == Monument && !isDeepOcean(biomeId)) {
-                            validBiome = false;
-                        }
-                        else if (attached.structureType == Mansion && biomeId != dark_forest) {
-                            validBiome = false;
-                        }
-                        else if (attached.structureType == Shipwreck && !isShipwreckBiome(biomeId)) {
-                            validBiome = false;
-                        }
-                        else if (attached.structureType == Village && !isVillageBiome(biomeId)) {
-                            validBiome = false;
+                        switch (structType) {
+                            case Monument:
+                                validBiome = isDeepOcean(biomeId);
+                                break;
+                            case Mansion:
+                                validBiome = checkSurroundingBiomes(baseX, baseZ, dark_forest, 72, g);
+                                break;
+                            case Shipwreck:
+                                validBiome = isShipwreckBiome(biomeId);
+                                break;
+                            case Village:
+                                validBiome = isVillageBiome(biomeId);
+                                break;
+                            case Ocean_Ruin:
+                                validBiome = isOceanRuinBiome(biomeId);
+                                break;
                         }
 
                         if (!validBiome) continue;
 
-                        // Add to valid positions if it passed all checks
-                        validPositions.push_back(p);
+                        #pragma omp critical
+                        {
+                            chunkValidPositions.push_back(p);
+                        }
                     }
+
+                    validPositions.insert(validPositions.end(), 
+                                        chunkValidPositions.begin(), 
+                                        chunkValidPositions.end());
+
+                    if (validPositions.size() >= 32) break;
                 }
 
-                // If no valid positions found, fail
                 if (validPositions.empty()) {
                     return false;
                 }
 
-                // Sort valid positions by distance from base
-                std::sort(validPositions.begin(), validPositions.end(), 
-                    [basePos](const Pos& a, const Pos& b) {
-                        int dxa = a.x - basePos->x;
-                        int dza = a.z - basePos->z;
-                        int dxb = b.x - basePos->x;
-                        int dzb = b.z - basePos->z;
+                std::sort(validPositions.begin(), validPositions.end(),
+                    [baseX, baseZ](const Pos& a, const Pos& b) {
+                        const int dxa = a.x - baseX;
+                        const int dza = a.z - baseZ;
+                        const int dxb = b.x - baseX;
+                        const int dzb = b.z - baseZ;
                         return (dxa*dxa + dza*dza) < (dxb*dxb + dzb*dzb);
                     });
 
-                // Use the first valid position (closest to base)
                 attached.foundPos = validPositions[0];
                 attached.found = true;
-                allFoundStructures.push_back({attached.structureType, validPositions[0]});
+                allFoundStructures.push_back({structType, validPositions[0]});
             }
 
             return true;
@@ -1806,6 +1837,8 @@ public:
             return false;
         }
     }
+
+    
 };
 
 static void glfw_error_callback(int error, const char* description) {

@@ -3,8 +3,7 @@
 This is a graphical user interface (GUI) version of [Chunkbiomes](https://github.com/Nel-S/Chunkbiomes), which ports certain filters from [Chunkbase](https://chunkbase.com/apps/seed-map) so features can be searched for across thousands of seeds every second. Currently this tool supports Windows platforms and is designed for *Minecraft: Bedrock Edition*, for helping users find seeds with specific Minecraft structures.
 
 
-
-![Screenshot_2739](https://github.com/user-attachments/assets/3730633d-3683-424e-82ac-e19020dc48c8)
+![Screenshot_2839](https://github.com/user-attachments/assets/0af801d6-ced8-449f-88bb-bfc4f09d71b1)
 
 
 ## Features:
@@ -18,8 +17,11 @@ This tool supports
 - Igloos,
 - Swamp Huts,
 - Woodland Mansions,
-- Ocean Monuments, and
-- Ancient Cities.
+- Ocean Monuments,
+- Ancient Cities,
+- Mineshafts,
+- Ocean Ruins,
+- Buried Treasure
 
 It can
 - Search for seeds within a 32-bit or 64-bit range, or within a specifically-defined range;
@@ -48,13 +50,13 @@ This tool relies on Dear ImGUI, GLFW, and [the Cubiomes library](https://github.
 
 ---
 ## Screenshots
-Screenshots of BetaV4:
+Screenshots of BetaV5:
 
-![Screenshot_2744](https://github.com/user-attachments/assets/42755d96-4afc-430a-a0e4-5fd36865a785)
-![Screenshot_2743](https://github.com/user-attachments/assets/2b71a8d2-62f7-45e3-90fe-8871ecd3477d)
-![Screenshot_2742](https://github.com/user-attachments/assets/1a5babff-3a68-4cd0-939a-d01a2dad824d)
-![Screenshot_2741](https://github.com/user-attachments/assets/ccca8e08-7a02-4d12-a3ba-8e0d091db023)
-![Screenshot_2740](https://github.com/user-attachments/assets/b95fe579-cc1c-4df5-b34f-e322e998905f)
+![Screenshot_2841](https://github.com/user-attachments/assets/b7788503-fde7-481c-b47e-d484af30e43a)
+![Screenshot_2840](https://github.com/user-attachments/assets/4983342a-b50c-49cf-8c61-bfcff84a9f25)
+![Screenshot_2843](https://github.com/user-attachments/assets/9b7fb957-f0f2-45c8-9e26-94fb77d3a139)
+![Screenshot_2842](https://github.com/user-attachments/assets/0a670578-c4ba-475d-af3a-51c845fa304b)
+
 
 ---
 
